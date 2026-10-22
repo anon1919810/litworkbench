@@ -176,6 +176,25 @@ def build_parser() -> argparse.ArgumentParser:
     export_evidence.add_argument("--task")
     export_evidence.add_argument("--doc")
     export_evidence.add_argument("--out")
+    export_xlsx = export_sub.add_parser(
+        "xlsx",
+        help="导出五张表的 Excel 工作簿（说明/文献/摘录/证据/待核）",
+        description=(
+            "把一个工作区导出成五张表的 .xlsx：说明、文献、摘录、证据、待核。\n"
+            "每张表冻结首行、启用自动筛选；页数是真数字、时间是 yyyy-mm-dd hh:mm。\n"
+            "证据/待核行缺 unit_id、字符区间或原件哈希时不导出该行，跳过条数写进说明表。"
+        ),
+        epilog=(
+            "示例：\n"
+            "  lit --workspace ./库 export xlsx --out 资料集.xlsx\n"
+            "  lit --workspace ./库 export xlsx --schemas > 列契约.json\n"
+            "说明：openpyxl 是可选依赖，未安装时本命令给中文提示并提示装 litworkbench[xlsx]。\n"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    export_xlsx.add_argument("--out", help="输出文件（默认写入 artifacts/xlsx）")
+    export_xlsx.add_argument("--schemas", action="store_true",
+                             help="只输出列契约 JSON（不写文件，也不需要已存在的工作区）")
 
     # ------------------------------------------------------------- 自校对
     proofread_parser = subparsers.add_parser(
@@ -469,6 +488,16 @@ def cmd_tasks(args: argparse.Namespace) -> int:
 
 def cmd_export(args: argparse.Namespace) -> int:
     from litworkbench.export import export_evidence, export_report
+
+    if args.export_command == "xlsx":
+        from litworkbench.xlsx_export import export_xlsx, schema_contract
+
+        if args.schemas:
+            # 列契约是静态文档：不需要打开工作区，也不写任何文件。
+            emit(schema_contract())
+            return 0
+        emit(export_xlsx(_workspace(args), output=args.out))
+        return 0
 
     workspace = _workspace(args)
     if args.export_command == "report":
