@@ -21,6 +21,18 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
 
+
+def _force_utf8_stdio() -> None:
+    # CI 运行器默认 cp1252，argparse 打印中文 --help 会 UnicodeEncodeError；这里强制 UTF-8。
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
+_force_utf8_stdio()
+
 EXIT_OK = 0
 EXIT_USAGE = 2
 EXIT_MISSING_DEPENDENCY = 3

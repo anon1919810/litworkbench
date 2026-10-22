@@ -24,6 +24,18 @@ from typing import Any, Sequence
 from scripts.ocr_quality import common, metrics, workers
 from scripts.ocr_quality.common import DERIVED_DIRNAME, SafetyError, ValidationFailure
 
+
+def _force_utf8_stdio() -> None:
+    # CI 运行器默认 cp1252，argparse 打印中文 --help 会 UnicodeEncodeError；这里强制 UTF-8。
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
+_force_utf8_stdio()
+
 EXIT_OK = 0
 EXIT_PROBLEMS = 1
 EXIT_UNAVAILABLE = 2
