@@ -27,7 +27,21 @@
 
 把路径换成真实资料路径。所有命令都将结构化 JSON 写到标准输出，错误和进度写到标准错误；可供其他 Agent 或脚本调用。`--workspace` 放在子命令前。默认扫描件在本地 CPU 上 OCR，无需部署大语言模型或购买显卡。
 
-## 在其他电脑安装
+## 从 git 本地部署
+
+不提供安装包，直接从仓库部署；需要 Python 3.11+ 与 [uv](https://docs.astral.sh/uv/getting-started/installation/)，网页版另需 Node 22 构建一次前端。
+
+```powershell
+git clone https://github.com/anon1919810/litworkbench.git
+cd litworkbench
+uv sync --python 3.12 --extra ocr --extra web --extra xlsx
+cd web-client; npm ci; npm run build; cd ..     # 只在用网页版时需要
+.\启动文献工作台.cmd
+```
+
+命令行版不需要 Node：装完依赖直接 `uv run --extra ocr lit --help`。
+
+## 依赖分组与自检
 
 建议 Python 3.12；本项目要求 Python 3.11 及以上。安装 [uv](https://docs.astral.sh/uv/getting-started/installation/) 后，在项目目录运行：
 
