@@ -79,8 +79,8 @@ Implementation completed and independently accepted on 2026-10-12. The checklist
 
 ## Environment for this run
 
-- Project: `C:\Users\杨睿\Documents\Codex\2026-10-11\w-2\outputs\litworkbench`
-- Python: `C:\Users\杨睿\Documents\Codex\2026-10-11\w-2\work\litworkbench-venv\Scripts\python.exe`
-- uv: `C:\Users\杨睿\Documents\Codex\2026-10-11\w-2\work\tools\uv\uv-0.13.0.data\scripts\uv.exe`
+- Project: `<工作区>/outputs/litworkbench`
+- Python: `<venv>/Scripts/python.exe`
+- uv: `<tools>/uv/uv.exe`
 - Install: `& '<uv>' pip install --python '<Python>' -e '.[dev,ocr]'`
 - Do not wait for user review; the user explicitly said to start. Codex reviews and accepts after implementation.
