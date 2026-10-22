@@ -25,7 +25,7 @@ from litworkbench.errors import WorkspaceError
 from litworkbench.store import Workspace, utcnow
 
 #: 网页里程碑引入的结构版本（1 = 核心 CLI 结构）
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 9
 
 
 @dataclass(frozen=True)
@@ -389,6 +389,48 @@ CREATE TABLE IF NOT EXISTS ocr_gate (
 )""")
 
 
+def _create_proofread_candidates(conn: sqlite3.Connection) -> None:
+    """模型自校对候选（v9）：只新增表与索引，不改动任何既有行。
+
+    * ``proofread_candidates``：一条模型建议一行，**从不直接改 ``units``**；
+      采用与否由 ``status`` 记录（pending/accepted/rejected），决定后不可回退成 pending；
+    * ``start_offset``/``end_offset`` 与 ``evidence`` 同名，指向生成时的
+      「当前有效文字」（优先校订版）；
+    * ``base_text_sha256``：生成候选时的正文指纹，便于事后判断偏移是否还成立；
+    * 部分唯一索引保证**同一正文片段同一建议最多一条待核候选**（重复生成幂等）。
+    """
+    conn.execute("""
+CREATE TABLE IF NOT EXISTS proofread_candidates (
+    id TEXT PRIMARY KEY,
+    unit_id TEXT NOT NULL REFERENCES units(id) ON DELETE CASCADE,
+    start_offset INTEGER NOT NULL,
+    end_offset INTEGER NOT NULL,
+    original TEXT NOT NULL,
+    suggestion TEXT NOT NULL,
+    reason TEXT NOT NULL DEFAULT '',
+    model TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'pending',
+    decision_note TEXT NOT NULL DEFAULT '',
+    base_text_sha256 TEXT NOT NULL DEFAULT '',
+    decided_at TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+)""")
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_proofread_candidates_status "
+        "ON proofread_candidates(status, created_at)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_proofread_candidates_unit "
+        "ON proofread_candidates(unit_id, created_at)"
+    )
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_proofread_candidates_pending "
+        "ON proofread_candidates(unit_id, start_offset, end_offset, suggestion) "
+        "WHERE status = 'pending'"
+    )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "web-jobs-and-index", lambda conn: (_add_unit_columns(conn),
                                                      _create_web_tables(conn))),
@@ -399,6 +441,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(6, "collections-and-exports", _create_collection_tables),
     Migration(7, "ocr-candidates-and-content-revision", _create_candidate_schema),
     Migration(8, "supervised-ocr-gate", _create_ocr_gate),
+    Migration(9, "proofread-candidates", _create_proofread_candidates),
 )
 
 

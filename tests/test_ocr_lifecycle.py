@@ -45,7 +45,8 @@ def test_v7_upgrade_creates_gate_without_rewriting_content(tmp_path, monkeypatch
         ws = Workspace(tmp_path / "library")
         ws.initialize()
     result = migrations.ensure_schema(ws)
-    assert result["from"] == 7 and result["to"] == 8
+    assert result["from"] == 7 and result["to"] == migrations.SCHEMA_VERSION
+    assert "supervised-ocr-gate" in result["applied"]
     assert OcrGate(ws).inspect()["state"] == "free"
     assert migrations.ensure_schema(ws)["applied"] == []
 

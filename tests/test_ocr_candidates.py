@@ -216,12 +216,12 @@ def _db_contains(workspace, needle: str) -> bool:
 
 
 def test_schema_version_includes_candidate_migration():
-    assert migrations.SCHEMA_VERSION == 8
+    assert migrations.SCHEMA_VERSION >= 8
 
 
 def test_migration_v6_to_v7_preserves_rows_and_is_idempotent(tmp_path, monkeypatch):
     """真正的 v6 工作区升到 v7：既有文献/单元/摘录/集合一行不丢，且可重复执行。"""
-    assert migrations.SCHEMA_VERSION == 8
+    assert migrations.SCHEMA_VERSION >= 8
     # 造一个**真正的** v6 工作区：只登记 2..6，避免 v7 迁移也被跑掉。
     full_migrations = migrations.MIGRATIONS
     monkeypatch.setattr(
@@ -271,7 +271,9 @@ def test_migration_v6_to_v7_preserves_rows_and_is_idempotent(tmp_path, monkeypat
             {"now": now},
         )
 
-    monkeypatch.setattr(migrations, "MIGRATIONS", full_migrations)
+    # 本用例只覆盖到 v8：MIGRATIONS 与 SCHEMA_VERSION 必须一起钉住
+    monkeypatch.setattr(migrations, "MIGRATIONS",
+                        tuple(m for m in full_migrations if m.version <= 8))
     monkeypatch.setattr(migrations, "SCHEMA_VERSION", 8)
     result = migrations.ensure_schema(workspace)
     assert result["from"] == 6 and result["to"] == 8

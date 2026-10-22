@@ -177,6 +177,44 @@ def build_parser() -> argparse.ArgumentParser:
     export_evidence.add_argument("--doc")
     export_evidence.add_argument("--out")
 
+    # ------------------------------------------------------------- 自校对
+    proofread_parser = subparsers.add_parser(
+        "proofread",
+        help="模型自校对：生成/列出/采用/拒绝校订候选（不覆盖原文）",
+        description=(
+            "让 config.toml 里 [provider] 配置的 OpenAI 兼容模型对已识别文字提出校订候选。\n"
+            "候选只入库，绝不覆盖现用文字；只有 --accept 才写入校订，且原始识别结果与\n"
+            "校订历史一律保留。模型给出的原文片段必须与现有文字逐字一致，否则整条丢弃并计数。"
+        ),
+        epilog=(
+            "示例：\n"
+            "  lit --workspace ./库 proofread u_xxx_page_0001\n"
+            "  lit --workspace ./库 proofread --doc doc_xxx\n"
+            "  lit --workspace ./库 proofread --all\n"
+            "  lit --workspace ./库 proofread --list --status pending\n"
+            "  lit --workspace ./库 proofread --accept pf_xxx\n"
+            "  lit --workspace ./库 proofread --reject pf_xxx --reason 模型判断有误\n"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    proofread_parser.add_argument("unit_id", nargs="?",
+                                  help="要校对的单元 ID（生成候选时使用）")
+    proofread_parser.add_argument("--doc", help="对该文献的全部单元生成候选")
+    proofread_parser.add_argument("--all", action="store_true",
+                                  help="对所有单元生成候选（最多 200 个）")
+    proofread_parser.add_argument("--list", dest="do_list", action="store_true",
+                                  help="列出已有候选（不调用模型）")
+    proofread_parser.add_argument("--status",
+                                  help="配合 --list：pending/accepted/rejected")
+    proofread_parser.add_argument("--limit", type=int, default=200,
+                                  help="配合 --list：返回条数上限（默认 200）")
+    proofread_parser.add_argument("--accept", metavar="候选ID",
+                                  help="采用候选：写入校订，原文与历史保留")
+    proofread_parser.add_argument("--reject", metavar="候选ID",
+                                  help="拒绝候选：只改候选状态，不动正文")
+    proofread_parser.add_argument("--reason", default="",
+                                  help="采用/拒绝的原因（记入决定说明）")
+
     return parser
 
 
@@ -301,6 +339,48 @@ def cmd_correct(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_proofread(args: argparse.Namespace) -> int:
+    """自校对：生成候选 / 列出 / 采用 / 拒绝。数据走 stdout，进度与错误走 stderr。"""
+    from litworkbench import proofread as pf
+
+    workspace = _workspace(args)
+    if args.accept and args.reject:
+        raise LitError("--accept 与 --reject 不能同时使用。")
+    deciding = bool(args.accept or args.reject)
+    generating = bool(args.unit_id or args.doc or args.all)
+    if deciding and (args.do_list or generating):
+        raise LitError("--accept/--reject 不能与生成候选或 --list 混用。")
+    if args.do_list and generating:
+        raise LitError("--list 只列出候选，不能同时指定单元/--doc/--all。")
+    if args.status and not args.do_list:
+        raise LitError("--status 只能与 --list 一起使用。")
+
+    if args.accept:
+        emit(pf.accept_candidate(workspace, args.accept, reason=args.reason))
+        return 0
+    if args.reject:
+        emit(pf.reject_candidate(workspace, args.reject, reason=args.reason))
+        return 0
+    if args.do_list:
+        items = pf.list_candidates(workspace, status=args.status,
+                                   unit_id=args.unit_id, doc_id=args.doc,
+                                   limit=args.limit)
+        emit({"count": len(items), "candidates": items})
+        return 0
+
+    unit_ids = pf.resolve_unit_ids(workspace, unit_id=args.unit_id,
+                                   doc_id=args.doc, all_units=args.all)
+    log(f"正在对 {len(unit_ids)} 个单元生成校订候选（候选只入库，不会覆盖原文）……")
+    result = pf.generate_candidates(workspace, unit_ids)
+    emit(result)
+    for item in result["units"]:
+        if item["status"] == "error":
+            log(f"单元 {item['unit_id']} 未生成候选：{item.get('error_message') or item['error']}")
+        elif item["status"] == "skipped":
+            log(f"单元 {item['unit_id']} 已跳过：{item['error']}")
+    return 1 if result["failed"] else 0
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     from litworkbench import ocr as ocr_mod
     from litworkbench.config import provider_settings
@@ -413,6 +493,7 @@ COMMANDS = {
     "doctor": cmd_doctor,
     "make-demo": cmd_make_demo,
     "excerpt": cmd_excerpt,
+    "proofread": cmd_proofread,
     "research": cmd_research,
     "resume": cmd_resume,
     "tasks": cmd_tasks,
