@@ -1,183 +1,110 @@
-# 本地文献工作台（litworkbench）
+# litworkbench · 给 AI Agent 的操作手册
 
-本地优先的文献工作台。网页版提供扫描 PDF / 文本 PDF / DOCX 的批量导入、后台 OCR、全文检索、原页核对、摘录、专题归类与 CSV/JSON/Markdown/DOCX 资料集导出；原件、数据库和摘录保存在本机，基础流程不需要 AI API。原有 CLI 与其 Agent 研究、报告导出功能保留；网页 AI 研究与团队协作尚未接入。
+> 这份 README 是写给**使用者的 AI Agent** 的：读完就应该能独立完成「把地方志变成结构化表格」的全过程，不需要再问人技术细节。
+> 人只需要做两件事：把 PDF/DOCX 放好，以及在关键处点头。
 
-## 在这台电脑上打开网页
+## 0. 你的任务
 
-双击项目目录中的 **`启动文献工作台.cmd`**，浏览器会打开本机服务。默认数据目录为旁边的 `outputs/library`，日常使用无需输入命令，也无需运行 Node。
+替人把本地的地方志（扫描 PDF / 文本 PDF / DOCX）导入本机文献库，做 OCR、检索、原页核对、精确摘录，最后产出一张**文化要素表**（xlsx，8 列）。
 
-先在“文献库”批量选择文件，再到“识别任务”查看进度；识别完成后进入“全库检索”，打开命中原页，选中文字保存到“摘录集”。PDF 文件页序和书上印刷页码分别记录。
+## 1. 装（一次性，约 5 分钟）
 
-详细操作见 [网页版使用说明](docs/web-user-guide.md)。当前为本机开发版；完整跨电脑安装包及合计 1000 页的真实容量验收后续提供。
-
-重新识别使用「生成候选 → 对照原页 → 手动采用或保留」流程。生成不会覆盖现用文字，
-采用保留已有校订及旧 OCR 快照。网页 OCR 逐页运行，具有超时、内存监控与中断恢复；
-仅使用本机已有模型，不会在网页请求中下载权重。详见使用说明中的「重新识别」。
-
-## 命令行入口（可选）
-
-在本文件所在目录打开 PowerShell。已准备好的本地运行环境可以通过 `lit.cmd` 使用：
-
-```powershell
-.\lit.cmd --help
-.\lit.cmd --workspace ".\我的文献库" init
-.\lit.cmd --workspace ".\我的文献库" import "D:\文献\某县志.pdf"
-.\lit.cmd --workspace ".\我的文献库" search "灯会"
-```
-
-把路径换成真实资料路径。所有命令都将结构化 JSON 写到标准输出，错误和进度写到标准错误；可供其他 Agent 或脚本调用。`--workspace` 放在子命令前。默认扫描件在本地 CPU 上 OCR，无需部署大语言模型或购买显卡。
-
-## 给别人用：把仓库和这份说明一起交给他的 Agent
-
-仓库根目录的 **[AGENTS.md](AGENTS.md)** 是写给**使用者自己的 AI Agent** 的作业说明：怎么部署、CLI 怎么用、文化要素 8 列的契约、引文四取一的规则、以及不许乱来的五条硬规则。
-
-给人时的最短说法：
-
-> 把这个仓库 clone 下来，让你的 Agent 先读仓库根目录的 AGENTS.md，再按里面的流程做。
-
-## 从 git 本地部署
-
-不提供安装包，直接从仓库部署；需要 Python 3.11+ 与 [uv](https://docs.astral.sh/uv/getting-started/installation/)，网页版另需 Node 22 构建一次前端。
-
-```powershell
+```bash
 git clone https://github.com/anon1919810/litworkbench.git
 cd litworkbench
-uv sync --python 3.12 --extra ocr --extra web --extra xlsx
-cd web-client; npm ci; npm run build; cd ..     # 只在用网页版时需要
-.\启动文献工作台.cmd
+uv sync --python 3.12 --extra ocr --extra xlsx     # 只用命令行，不需要 --extra web，也不需要 Node
+uv run --extra ocr --extra xlsx lit --help         # 看到中文帮助 = 装好了
 ```
 
-命令行版不需要 Node：装完依赖直接 `uv run --extra ocr lit --help`。
+- 没有 `uv`：先装（`winget install astral-sh.uv` 或见 https://docs.astral.sh/uv/），再重跑上面两条。
+- 依赖首次需要网络，OCR 那组几百 MB，属正常。
+- 需要网页版再加 `--extra web`，并在 `web-client` 里 `npm ci && npm run build`；**本手册的流程不需要网页版**。
 
-## 依赖分组与自检
+自检并记下库目录（后面所有命令都用它）：
 
-建议 Python 3.12；本项目要求 Python 3.11 及以上。安装 [uv](https://docs.astral.sh/uv/getting-started/installation/) 后，在项目目录运行：
-
-```powershell
-uv sync --python 3.12 --extra ocr --extra web --extra xlsx
-uv run --extra ocr --extra web --extra xlsx lit --help
-uv run --extra ocr --extra web lit --workspace ".\我的文献库" init
+```bash
+uv run --extra ocr --extra xlsx lit --workspace "<库目录>" doctor    # 必须 exit 0
 ```
 
-- `ocr`：本地 RapidOCR（扫描件必需）
-- `web`：网页版服务（FastAPI + uvicorn）
-- `xlsx`：Excel 导出（openpyxl）；不装时 `export xlsx` 会给出中文提示，其它格式不受影响
+## 2. 跑（标准流水线）
 
-**网页版还要一次性构建前端**（`web-client/dist` 不进仓库，缺产物时服务返回 503 并打印查找过的目录）：
-
-```powershell
-cd web-client
-npm install
-npm run build
-cd ..
-.\启动文献工作台.cmd
+```bash
+lit --workspace "<库目录>" init
+lit --workspace "<库目录>" import "<资料目录或文件>"       # 扫描件自动 OCR，逐页可恢复
+lit --workspace "<库目录>" list --units --status pending    # 还有哪些页没搞定
+lit --workspace "<库目录>" search "<关键词>"                # 字面匹配，不做语义猜词
+lit --workspace "<库目录>" read "<unit_id>"                 # 拿原文 —— 引文的唯一合法来源
+lit --workspace "<库目录>" render "<unit_id>"               # 需要人核对时出页图
+lit --workspace "<库目录>" excerpt save "<unit_id>" --quote "<从 read 原样复制>" --category "<专题>"
+lit --workspace "<库目录>" proofread --doc "<doc_id>"       # 模型提校订候选，不覆盖原文
+lit --workspace "<库目录>" proofread --list --status pending
+lit --workspace "<库目录>" proofread --accept "<pf_xxx>"    # 必须人来点，不要批量自行采用
+lit --workspace "<库目录>" export xlsx --out ".\exports\证据表.xlsx"
+lit --workspace "<库目录>" export xlsx --schemas            # 机器可读列契约
 ```
 
-只要命令行与导出，不需要装 Node，也不需要构建前端。
+规则：**结构化结果在 stdout（JSON），进度与错误在 stderr；退出码非 0 就是失败**，不许当成功继续往下写。
 
-也可用 pip：`python -m pip install ".[ocr,web,xlsx]"`，安装后命令为 `lit`。只处理文字 PDF / DOCX 可不安装 `ocr` extra。`uv.lock` 固定依赖版本；首次安装需要网络，OCR 模型首次初始化也可能需要下载，准备完成后识别在本地进行。
+中断后：`lit --workspace "<库目录>" tasks` 看任务，`... resume "<task_id>"` 接着跑，不会重头再来。
 
-## 导入、定位与摘录
+## 3. 产出：文化要素表（8 列）
 
-```powershell
-.\lit.cmd --workspace ".\我的文献库" import "D:\文献" --ocr auto
-.\lit.cmd --workspace ".\我的文献库" list
-.\lit.cmd --workspace ".\我的文献库" search "灯会"
-.\lit.cmd --workspace ".\我的文献库" read "<搜索结果的unit_id>"
-.\lit.cmd --workspace ".\我的文献库" render "<PDF的unit_id>"
-.\lit.cmd --workspace ".\我的文献库" metadata "<doc_id>" --set "title=某县志" "author=某县志编纂委员会" "year=1998" "edition=第一版" "volume=卷二"
-.\lit.cmd --workspace ".\我的文献库" label "<unit_id>" "317"
-.\lit.cmd --workspace ".\我的文献库" excerpt save "<unit_id>" --quote "从read结果复制原文" --category "民俗" --note "待核对原件"
-.\lit.cmd --workspace ".\我的文献库" excerpt review "<evidence_id>" --status accepted --note "已对照扫描页"
-.\lit.cmd --workspace ".\我的文献库" export evidence --format csv --out ".\摘录.csv"
-```
+工具负责「原文 + 证据」，**这张业务表由你来组装**（openpyxl 已随 `--extra xlsx` 装好）：
 
-`<...>` 是说明用占位符，需要替换为实际 JSON 结果中的 ID。
+| 列 | 类型 | 必填 | 规则 |
+|---|---|---|---|
+| 序号 | 数值 | 是 | 1..n 连续 |
+| 名称 | 文本 | 是 | 要素名，可带括注：`夹纻胎（脱胎/重布胎）` |
+| 类别 | 枚举 | 是 | 只能是 `物质` / `精神` / `行为` / `制度` |
+| 时间 | 文本 | 是 | `朝代（纪年区间）`，例 `战国（BC475-221）`；不确定写 `不详` |
+| 空间 | 文本 | 是 | 省市地名，例 `湖北省荆州市`；跨区写 `湖北省及全国` |
+| 流域 | 文本 | 是 | 多值用**中文分号** `；`，例 `长江中游；汉江中游` |
+| 基础信息 | 长文本 | 是 | 几十到数百字解释，自己组织语言，不得编造事实 |
+| 历史文献 | 文本 | 是 | 见下节，**一格只放一个最优来源** |
 
-- `auto` 按页判断文字量；`off` 只读文本层；`force` 对页面强制 OCR。未识别页保留 pending/failed 状态，重复导入同一原件可补做；哈希相同的文件不会重复入库。
-- PDF 文件页序从 1 开始，与印刷页码分别保存；DOCX 用按文档顺序排列的段落/表格单元定位，不编造 Word 页码。
-- `correct <unit_id> --text-file 校订.txt --reason 原因` 保存整单元校订；`correct <unit_id> --revert --reason 原因` 撤销。原识别结果与历史保留，相关旧摘录标为 stale。
-- 摘录要求来自原文，允许跨换行匹配，保存的是原文精确切片及偏移。accepted 表示人工接受摘录；pending 是待核验；rejected 是拒绝；stale 是文本变化后待复核。
-- 为准确操作多版本同名文献，优先使用完整 doc_id，不要仅使用模糊文件名。
+表头加粗、冻结首行、整表自动换行、列宽 `6/20/12/20/26/12/60/70`、`类别` 列加数据验证（四个枚举值），工作表名 `"<卷名>文化要素全量"`。
 
-## 使用自己的 AI API
+### 历史文献：四取一，按优先级
 
-编辑文献库内的 `config.toml`，设置兼容 `/chat/completions` 的服务。示例地址不是可用供应商：
+格式**只有一种**：`《书名·卷次》：“原文”` 或 `人名《篇名》：“原文”`。
 
-```toml
-[provider]
-base_url = "https://your-provider.example/v1"
-model = "your-model-name"
-api_key_env = "LITWORKBENCH_API_KEY"
-timeout = 60.0
-temperature = 0.0
-max_output_tokens = 2048
-```
+1. **人**：`黄宗羲《南雷文定·王征南墓志铭》：“有所谓内家者，以静制动…”`
+2. **著作**：`《中国地域文化通览·湖北卷》：“春秋时期，楚国漆器的胎骨只有厚木胎一种。”`
+3. **古籍**：`《清史稿·艺文志》：“…”`
+4. **本志**（兜底）：`《十堰市志·卷二十文化》：“回龙寺背倚秀丽的青山…”`
 
-在当前 PowerShell 设置环境变量，密钥不要写进 TOML 或发给本项目作者：
+**禁止**：写网址；写 `〔原文〕` 之类标记；只有引号没有书名；书名号里缺卷次；一格塞两个来源。
 
-```powershell
-$env:LITWORKBENCH_API_KEY = "你的密钥"
-.\lit.cmd --workspace ".\我的文献库" research "查找灯会记载，按活动形式与历史沿革整理出处" --profile heritage --max-steps 16
-.\lit.cmd --workspace ".\我的文献库" tasks
-.\lit.cmd --workspace ".\我的文献库" resume "<task_id>" --max-steps 8
-.\lit.cmd --workspace ".\我的文献库" export report "<task_id>" --format markdown --out ".\研究报告.md"
-.\lit.cmd --workspace ".\我的文献库" export report "<task_id>" --format docx --out ".\研究报告.docx"
-.\lit.cmd --workspace ".\我的文献库" export report "<task_id>" --format json --out ".\研究报告.json"
-```
+你可以先联网找更权威的人名/著作/古籍，但**落进表格的是文字证据，不是链接**；不得编造书名、篇名、卷次或引文。
 
-Agent 动态调用 search / read / excerpt / finish，长原文可分段读取；每次运行有步骤上限，暂停或调用失败后可恢复。原文校订后须重新读取，才可摘录新版。报告结论必须关联当前任务的证据，无法用不存在、其他任务、已拒绝或待复核的证据提交结论。程序验证出处关系，研究结论是否成立仍需人工判断。
+## 4. 五条硬规则（违反即作废）
 
-远程模型会收到研究问题、研究方案、检索片段、所读文字及任务记录。只有显式运行 research / resume 才调用模型；导入不将整本资料上传。使用本地兼容服务时，例如 `base_url = "http://127.0.0.1:11434/v1"`，填写本机已部署的模型名，并按服务要求设置密钥；不要求鉴权的服务可设环境变量值为 `local`。普通电脑也可以本地 OCR、远程 API 推理。
+1. **引文只来自你读过的东西**：`lit read` 返回的 `original_text`，或人明确给的外部引文。
+2. **偏移逐字对得上**：摘录给的字符区间与原文切片必须完全一致，不一致就重读，不许猜。
+3. **不替人做决定**：`proofread --accept`、摘录核验、删除，都要人点头。
+4. **不碰库**：不直接 UPDATE/DELETE SQLite，不改 `config.toml` 里的密钥；密钥只从环境变量读。
+5. **不确定就留空进待核**，写进交付说明；不要用「看起来对」的内容填满。
 
-任务保存启动时的模型地址、模型名、方案和工具配置快照。改变 config 不会改变旧任务；密钥值每次从同名环境变量读取，可以更新。需要更换模型服务时启动新任务。`--max-steps` 表示本次新增运行步数，步骤编号累计。
+## 5. 交给人时的话术
 
-## 调整研究方案
+- 一句话结论：处理了哪几本文献、共几页、产出几行。
+- **待核清单**：哪几条的引文来源/时间/空间存疑，为什么。
+- 复核入口：每行都能对上 `书名 + 文件页 + 印刷页`，人能自己 `lit render` 出原页比对。
+- 未完成项：哪些页 OCR 失败、哪些文献没导入、哪些字段整列缺失。
 
-内置 `general`、`heritage`。复制 `examples/custom-profile.toml`，修改分类、提示词、术语别名和报告章节：
+## 6. 卡住了怎么办
 
-```powershell
-.\lit.cmd --workspace ".\我的文献库" research "你的问题" --profile ".\examples\custom-profile.toml"
-```
+| 现象 | 处理 |
+|---|---|
+| `export xlsx` 报缺 openpyxl | `uv sync --extra xlsx` |
+| 搜索搜不到生僻字 | 换常见写法或搜片段；检索是字面匹配，不等于书里没有 |
+| OCR 很慢 | 正常，单页秒级到数秒；中断用 `resume` 续跑 |
+| 控制台中文乱码 | 只是显示问题，JSON 与文件都是 UTF-8 |
+| 某命令不存在 | `lit --help` 对一遍，本手册的命令都在当前版本里 |
 
-这是工作流与提示词配置，不训练模型权重。文献库配置还可以设置 `agent.allowed_tools`、`search_limit` 和 `max_steps`。Agent 不能执行 shell、任意读文件或访问任意网址；文献正文作为待分析资料处理。
+## 7. 边界（不要越界承诺）
 
-## 模型自校对与 Excel 导出
-
-```powershell
-# 让配置好的 OpenAI 兼容模型对已识别文字提校订候选（只入库，不改原文）
-.\lit.cmd --workspace ".\我的文献库" proofread --doc <doc_id> --limit 50
-.\lit.cmd --workspace ".\我的文献库" proofread --list --status pending
-.\lit.cmd --workspace ".\我的文献库" proofread --accept <pf_xxx>
-.\lit.cmd --workspace ".\我的文献库" proofread --reject <pf_xxx> --reason "模型判断有误"
-
-# 导出成 xlsx 工作簿（五张表 + 机器可读列契约，供人和 Agent 共用）
-.\lit.cmd --workspace ".\我的文献库" export xlsx --out .\exports\证据表.xlsx
-.\lit.cmd --workspace ".\我的文献库" export xlsx --schemas
-```
-
-候选只在 `--accept` 时才由 `evidence.correct_unit` 写入校订，原始识别结果与校订历史一律保留。
-
-## 环境检查与验证
-
-```powershell
-.\lit.cmd --workspace ".\我的文献库" doctor
-uv sync --python 3.12 --extra dev --extra ocr
-uv run --extra dev --extra ocr python scripts/make_demo.py --out .\demo-input
-uv run --extra dev --extra ocr python scripts/smoke_ocr.py --workdir .\ocr-smoke
-uv run --extra dev --extra ocr python -m pytest -q
-```
-
-演示资料均为软件测试用合成数据，不是真实县志。OCR 缺依赖时安装 `ocr` extra；合成图片缺中文字体时使用 `--font` 指定 TTF/TTC。`.doc` 请先用 Word/WPS 另存为 `.docx`。API 错误可通过 tasks 查看状态，修复网络或环境变量后 resume。
-
-备份时停止写入操作，复制整个文献库目录，保留数据库、config.toml、sources 原件与 artifacts。首版按单用户串行操作设计，不要同时恢复同一个任务。
-
-## 当前边界
-
-支持现代横排中文资料；本地检索是忽略空白的字面匹配，尚无向量检索。扫描倾斜、模糊、复杂分栏、表格结构及跨页文本仍需核查；自动 OCR 判定使用文字量阈值，可手动 force。书目信息与印刷页码需要人工补充，Word 创建年份不会当作出版年。
-
-已做合成资料及本地模拟 HTTP 服务测试，并在真实浏览器完成 6 份 PDF、91 页的导入、识别、检索和摘录闭环。专题集合及四种资料导出已通过独立验收：实际下载并解析四种文件，Word 另逐页渲染检查，服务重启后可继续下载。见 [本轮验收记录](docs/web-task6-acceptance.md)。
-
-真实县志的量化识别准确率、真实供应商兼容性和合计 1000 页的长书性能尚未验收。未实现多人协作、训练型微调或复杂版面还原；网页端的 AI 研究与报告生成仍未接入。
-
-设计见 `docs/design.md`，验收记录见 `docs/verification.md`。
+- 本工具**不联网**、不上传文献；只有你自己做外部检索时才联网。
+- 检索是**字面匹配**：没有向量检索，没有语义猜测。
+- OCR 对模糊、倾斜、复杂分栏、表格结构仍会错；错字要靠人对照原页确认。
+- 单用户、串行设计，不要并发跑同一库里的任务。
