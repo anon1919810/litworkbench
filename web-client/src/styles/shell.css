@@ -1,0 +1,282 @@
+/* 应用外壳：侧栏 + 顶栏 + 主工作区 */
+.app {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+}
+
+.col {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sidebar {
+  width: var(--sb);
+  flex: 0 0 var(--sb);
+  background: var(--bg);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  z-index: 30;
+}
+
+.ws-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: calc(100% - 16px);
+  margin: 8px 8px 2px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.ws-btn:hover {
+  background: var(--hover);
+}
+
+.ws-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  background: var(--text);
+  color: #fff;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.ws-name {
+  font-size: 14.5px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sb-scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 2px 8px 10px;
+  min-height: 0;
+}
+
+.sb-group {
+  font-size: 11.5px;
+  color: var(--text-3);
+  padding: 12px 8px 4px;
+  font-weight: 500;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 8px;
+  border-radius: 3px;
+  font-size: 14px;
+  color: var(--text);
+  text-align: left;
+}
+
+.nav-item:hover {
+  background: var(--hover);
+}
+
+.nav-item[aria-current='page'] {
+  background: var(--hover);
+  font-weight: 600;
+}
+
+.nav-ico {
+  color: #73726e;
+  flex: 0 0 auto;
+}
+
+.nav-txt {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-badge {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--text-3);
+  flex: 0 0 auto;
+}
+
+.sb-foot {
+  border-top: 1px solid var(--line);
+  padding: 6px 8px 8px;
+}
+
+.sb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 8px;
+  border-radius: 3px;
+  font-size: 13.5px;
+  color: var(--text);
+  text-align: left;
+}
+
+.sb-row:hover {
+  background: var(--hover);
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--blue);
+  flex: 0 0 auto;
+}
+
+.state-tag {
+  font-size: 11px;
+  color: var(--text-3);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0 5px;
+  background: #fff;
+  flex: 0 0 auto;
+}
+
+.sb-muted {
+  font-size: 12px;
+  color: var(--text-3);
+  padding: 2px 8px;
+  overflow-wrap: anywhere;
+}
+
+.topbar {
+  height: 45px;
+  flex: 0 0 45px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px 0 14px;
+  background: var(--canvas);
+  border-bottom: 1px solid var(--line);
+}
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  color: var(--text-3);
+  min-width: 0;
+}
+
+.crumb-cur {
+  color: var(--text);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tb-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tb-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 13.5px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.tb-btn:hover {
+  background: var(--hover);
+}
+
+.tb-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  color: #73726e;
+}
+
+.tb-icon:hover {
+  background: var(--hover);
+}
+
+.tb-note {
+  font-size: 11.5px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.tb-menu {
+  display: none;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  color: #73726e;
+}
+
+.workspace {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* 检索视图允许整体纵向滚动：窗口太矮时把空间让给阅读区，而不是把正文压成 0 高。 */
+.workspace.view-search {
+  overflow-y: auto;
+}
+
+.nav-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(55, 53, 47, 0.3);
+  z-index: 29;
+}
+
+.boot {
+  margin: auto;
+  padding: 40px 24px;
+  max-width: 520px;
+}
+
+.boot h1 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.boot p {
+  color: var(--text-2);
+  line-height: 1.8;
+}

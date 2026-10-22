@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "litworkbench"
+version = "0.1.0"
+description = "本地文献工作台：本地优先的文献导入、检索、摘录、研究与导出命令行工具"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+    "pypdfium2>=4.30.0",
+    "Pillow>=10.0.0",
+    "python-docx>=1.1.0",
+    "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "reportlab>=4.0.0",
+]
+ocr = [
+    "rapidocr>=3.0.0",
+    "onnxruntime>=1.17.0",
+    "psutil==7.2.2",
+]
+web = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "python-multipart>=0.0.9",
+]
+
+[project.scripts]
+lit = "litworkbench.cli:main"
+litweb = "litworkbench.web.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/litworkbench"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/litworkbench", "docs", "README.md", "scripts", "tests", "examples", "lit.cmd", "uv.lock"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
+markers = [
+    "slow: 需要真实 OCR 引擎或较长时间的用例",
+]

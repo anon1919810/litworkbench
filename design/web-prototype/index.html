@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="文献案头（暂定名）设计草图：本地文献检索、原页对读、摘录与研究项目。全部数据为演示，不连接真实文献库。">
+<meta name="color-scheme" content="light">
+<title>个人图书馆 · Notion 样式草图</title>
+<style>
+/* ============================================================
+   文献案头 · 界面草图（Notion 风格工作区）
+   底色 #F7F7F5 / 画布 #FFF / 文字 #37352F / 次级 #9B9A97
+   分隔线 #E9E9E7 / 悬停 #EBEBEA / 主操作 #2383E2
+   全部使用系统无衬线字体，无外部资源、无网络请求
+   ============================================================ */
+:root{
+  --bg:#F7F7F5;
+  --canvas:#FFFFFF;
+  --text:#37352F;
+  --text-2:#9B9A97;
+  --text-3:#6B6A67;
+  --line:#E9E9E7;
+  --hover:#EBEBEA;
+  --blue:#2383E2;
+  --blue-2:#1B72C5;
+  --blue-soft:#D3E5EF;
+  --gray-tag:#F1F1EF;
+  --yellow-tag:#FBF3DB;
+  --mark:#FBEFC6;
+  --sb:240px;
+  --ui:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","Noto Sans SC","PingFang SC","Hiragino Sans GB",Helvetica,Arial,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:var(--canvas);color:var(--text);
+  font:400 14px/1.5 var(--ui);-webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4,p,ul,ol,figure,dl,dd{margin:0}
+ul,ol{padding:0;list-style:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+svg{display:block}
+:focus-visible{outline:2px solid var(--blue);outline-offset:1px;border-radius:3px}
+.num{font-variant-numeric:tabular-nums}
+.sr{position:absolute;left:-9999px}
+.skip{position:absolute;left:-9999px}
+.skip:focus{left:8px;top:8px;z-index:99;background:#fff;padding:6px 10px;border-radius:3px;box-shadow:0 0 0 2px var(--blue)}
+mark{background:var(--mark);color:inherit;padding:0 1px;border-radius:2px}
+
+/* ---------------- 外壳 ---------------- */
+.app{display:flex;height:100%;min-height:0}
+.col{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;min-height:0}
+.workspace{flex:1 1 auto;min-height:0;min-width:0;display:flex;flex-direction:column;overflow-y:auto}
+.workspace.view-search{overflow:hidden}
+
+/* ---------------- 侧栏 ---------------- */
+.sidebar{
+  width:var(--sb);flex:0 0 var(--sb);background:var(--bg);
+  border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;z-index:30;
+}
+.ws-btn{display:flex;align-items:center;gap:8px;width:calc(100% - 16px);margin:8px 8px 2px;padding:4px 6px;border-radius:4px;text-align:left}
+.ws-btn:hover{background:var(--hover)}
+.ws-avatar{width:20px;height:20px;border-radius:3px;background:var(--text);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.ws-name{font-size:14.5px;font-weight:600;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chev{color:var(--text-2);flex:0 0 auto}
+.sb-scroll{flex:1 1 auto;overflow-y:auto;padding:2px 8px 10px;min-height:0}
+.sb-group{font-size:11.5px;color:var(--text-2);padding:12px 8px 4px;font-weight:500}
+.nav-item{
+  display:flex;align-items:center;gap:8px;width:100%;padding:5px 8px;border-radius:3px;
+  font-size:14px;color:var(--text);text-align:left;
+}
+.nav-item:hover{background:var(--hover)}
+.nav-item[aria-current="page"]{background:var(--hover);font-weight:600}
+.nav-ico{color:#73726E;flex:0 0 auto}
+.nav-txt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-badge{margin-left:auto;font-size:11.5px;color:var(--text-2);flex:0 0 auto}
+.nav-item.sub{padding-left:26px;font-size:13.5px;color:var(--text-3)}
+.sb-foot{border-top:1px solid var(--line);padding:6px 8px 8px}
+.sb-row{display:flex;align-items:center;gap:8px;width:100%;padding:5px 8px;border-radius:3px;font-size:13.5px;color:var(--text);text-align:left}
+.sb-row:hover{background:var(--hover)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--blue);flex:0 0 auto}
+.prev-tag{font-size:11px;color:var(--text-2);border:1px solid var(--line);border-radius:3px;padding:0 5px;background:#fff;flex:0 0 auto}
+.sb-muted{font-size:12px;color:var(--text-2);padding:2px 8px}
+
+/* ---------------- 顶栏 ---------------- */
+.topbar{
+  height:45px;flex:0 0 45px;display:flex;align-items:center;gap:10px;
+  padding:0 10px 0 14px;background:var(--canvas);border-bottom:1px solid var(--line);
+}
+.crumbs{display:flex;align-items:center;gap:7px;font-size:14px;color:var(--text-2);min-width:0}
+.crumb-cur{color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:6px;min-width:0}
+.tb-btn{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:3px;font-size:13.5px;color:var(--text);white-space:nowrap}
+.tb-btn:hover{background:var(--hover)}
+.tb-icon{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:3px;color:#73726E}
+.tb-icon:hover{background:var(--hover)}
+.tb-preview{font-size:11.5px;color:var(--text-2);white-space:nowrap}
+.tb-menu{display:none;width:28px;height:28px;align-items:center;justify-content:center;border-radius:3px;color:#73726E}
+
+/* ---------------- 页面头 ---------------- */
+.page{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
+.page-head{padding:34px 40px 6px}
+.page-head.sm{padding:22px 40px 4px}
+.page-icon{width:32px;height:32px;color:var(--text);margin-bottom:8px}
+.page-icon svg{width:100%;height:100%}
+.page-head.sm .page-icon{width:26px;height:26px;margin-bottom:6px}
+.page-title{font-size:32px;line-height:1.2;font-weight:700;letter-spacing:-.01em}
+.page-head.sm .page-title{font-size:28px}
+.page-desc{margin-top:6px;font-size:14px;line-height:1.65;color:var(--text-2);max-width:820px}
+.page-body{padding:0 40px 48px}
+.fine-print{font-size:12.5px;line-height:1.75;color:var(--text-2);margin-top:12px;max-width:860px}
+.fine-print b{color:var(--text-3);font-weight:500}
+
+/* ---------------- 检索视图头 ---------------- */
+.search-row{display:flex;align-items:center;gap:8px;padding:12px 40px 4px;flex-wrap:wrap}
+.sfield{display:flex;align-items:center;gap:8px;height:36px;border:1px solid var(--line);border-radius:4px;padding:0 10px;background:#fff;flex:1 1 300px;max-width:440px}
+.sfield:focus-within{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
+.sfield input{border:0;outline:none;flex:1 1 auto;min-width:0;background:transparent;font-size:14px;padding:0}
+.sfield input::-webkit-search-cancel-button{cursor:pointer}
+.s-hint{font-size:12.5px;color:var(--text-2)}
+.viewbar{display:flex;align-items:flex-end;gap:2px;padding:10px 40px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.vtab{position:relative;padding:7px 10px 9px;font-size:14px;color:var(--text-2);border-radius:3px 3px 0 0;white-space:nowrap}
+.vtab:hover{color:var(--text);background:var(--hover)}
+.vtab[aria-selected="true"]{color:var(--text);font-weight:500}
+.vtab[aria-selected="true"]::after{content:"";position:absolute;left:6px;right:6px;bottom:-1px;height:2px;background:var(--text);border-radius:2px}
+.vcount{font-size:12.5px;color:var(--text-2);padding:0 10px 9px}
+.vfilters{margin-left:auto;display:flex;align-items:center;gap:6px;padding-bottom:7px;flex-wrap:wrap}
+.qselect{height:28px;border:1px solid var(--line);border-radius:3px;background:#fff;font-size:13px;padding:0 4px;max-width:170px;cursor:pointer;color:var(--text)}
+.qselect:hover{background:var(--hover)}
+
+/* ---------------- 按钮 / 标签 ---------------- */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:3px;
+  font-size:14px;color:var(--text);background:#fff;border:1px solid rgba(55,53,47,.16);white-space:nowrap;
+}
+.btn:hover{background:rgba(55,53,47,.06)}
+.btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn-primary:hover{background:var(--blue-2);border-color:var(--blue-2)}
+.btn-quiet{border-color:transparent;background:transparent}
+.btn-quiet:hover{background:var(--hover)}
+.btn-sm{height:28px;padding:0 9px;font-size:13px}
+.btn[disabled]{opacity:.42;cursor:not-allowed}
+.tag{
+  display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:18px;padding:0 6px;
+  border-radius:3px;background:var(--gray-tag);color:var(--text-3);white-space:nowrap;
+}
+.tag-blue{background:var(--blue-soft);color:#1F4E79}
+.tag-yellow{background:var(--yellow-tag);color:#8A6412}
+.tag-red{background:#FBE4E0;color:#9B3B2C}
+.tag-gray{background:var(--gray-tag);color:var(--text-3)}
+.state::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.65;flex:0 0 auto}
+.state.stale::before{border-radius:1px;transform:rotate(45deg)}
+
+/* ---------------- 检索结果 ---------------- */
+.split{flex:1 1 auto;min-height:0;min-width:0;display:flex;overflow:hidden}
+.results{width:310px;flex:0 0 310px;min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--line);background:#fff}
+.res-head{flex:0 0 auto;padding:8px 16px;font-size:12.5px;color:var(--text-2);border-bottom:1px solid var(--line)}
+.res-list{flex:1 1 auto;overflow-y:auto;min-height:0}
+.result{display:block;width:100%;text-align:left;padding:14px 16px 15px;border-bottom:1px solid var(--line)}
+.result:hover{background:var(--bg)}
+.result[aria-current="true"]{background:var(--hover)}
+.r-title{font-size:15px;font-weight:500;line-height:1.45;display:block}
+.r-snip{display:block;margin-top:4px;font-size:13.5px;line-height:1.75;color:var(--text-3);overflow-wrap:anywhere}
+.r-meta{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:12px;color:var(--text-2);flex-wrap:wrap}
+.r-meta>*:last-child{margin-left:auto}
+.res-foot{flex:0 0 auto;padding:8px 16px;font-size:11.5px;color:var(--text-2);border-top:1px solid var(--line);line-height:1.6}
+.empty{padding:36px 20px;text-align:left;color:var(--text-2);font-size:13.5px;line-height:1.8}
+.empty strong{display:block;color:var(--text);font-size:15px;font-weight:600;margin-bottom:4px}
+
+/* ---------------- 阅读区 ---------------- */
+.reader{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;min-height:0;background:#fff}
+.doc-head{display:flex;align-items:flex-start;gap:12px;padding:16px 24px 8px}
+.doc-title{font-size:20px;font-weight:700;letter-spacing:-.01em;line-height:1.3;overflow-wrap:anywhere}
+.doc-sub{font-size:14px;color:var(--text-2);margin-top:3px;overflow-wrap:anywhere}
+.doc-acts{margin-left:auto;display:flex;gap:6px;flex:0 0 auto}
+.props{padding:4px 24px 12px;border-top:1px solid var(--line);margin-top:4px}
+.prop{display:flex;gap:14px;padding:3px 0;font-size:13.5px;align-items:baseline}
+.pk{width:64px;flex:0 0 auto;color:var(--text-2);text-align:right}
+.pv{min-width:0;overflow-wrap:anywhere}
+.source-properties{border-top:1px solid var(--line)}
+.source-properties summary{padding:9px 24px;cursor:pointer;font-size:13px;color:var(--text-3);line-height:1.7}
+.source-properties summary .tag{margin-left:8px}
+.doc-tabs{display:flex;gap:2px;padding:0 24px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.dtab{padding:8px 10px 9px;font-size:13.5px;color:var(--text-2);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.dtab:hover{color:var(--text)}
+.dtab[aria-selected="true"]{color:var(--text);font-weight:500;border-bottom-color:var(--text)}
+.panel{flex:1 1 auto;min-height:0;overflow-y:auto}
+.scan-bar{display:flex;align-items:center;gap:10px;padding:7px 24px;font-size:12.5px;color:var(--text-2);border-bottom:1px solid var(--line);background:#FBFBFA;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:#fff}
+.seg button{padding:2px 9px;font-size:12px;color:var(--text-2);border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--hover);color:var(--text)}
+.scan-scroll{flex:1 1 auto;min-height:0;overflow:auto;background:#F1F1EF;padding:16px}
+.scan-img{display:block;margin:0 auto;background:#fff;box-shadow:0 1px 5px rgba(55,53,47,.18);width:100%;height:auto}
+.scan-actual .scan-img{width:auto;max-width:none}
+.scan-note{font-size:12px;line-height:1.7;color:var(--text-2);padding:9px 24px;border-top:1px solid var(--line);background:#fff}
+.scan-ph{margin:16px 24px;padding:28px 20px;border:1px dashed var(--line);border-radius:6px;background:#FBFBFA;color:var(--text-2);font-size:13.5px;line-height:1.8}
+.scan-ph b{display:block;color:var(--text);font-size:15px;margin-bottom:4px}
+.read-wrap{padding:22px 28px 44px;max-width:820px}
+.read-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.read-p{font-size:16px;line-height:2;margin-bottom:16px;overflow-wrap:anywhere}
+.read-h{font-size:16px;font-weight:600;margin:24px 0 8px;line-height:1.5}
+.read-raw{font-size:12.5px;color:var(--text-2);text-align:center;margin-bottom:14px}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);flex:1 1 auto;min-height:0}
+.cmp-col{min-width:0;display:flex;flex-direction:column;min-height:0;background:#fff}
+.cmp-col+.cmp-col{border-left:1px solid var(--line)}
+.cmp-head{flex:0 0 auto;padding:8px 16px;font-size:12.5px;color:var(--text-2);border-bottom:1px solid var(--line);background:#FBFBFA;display:flex;gap:8px;align-items:center}
+.cmp-scroll{flex:1 1 auto;min-height:0;overflow-y:auto}
+.cmp-scroll .scan-scroll{flex:0 0 auto;overflow:visible;min-height:0;padding:12px}
+.cmp-text{flex:1 1 auto;min-height:0;overflow-y:auto}
+.cmp-text .read-wrap{padding:16px 20px 28px}
+.note-box{flex:0 0 auto;border-top:1px solid var(--line);padding:10px 16px;background:#FBFBFA}
+.note-box h4{font-size:12.5px;color:var(--text-2);margin-bottom:6px;font-weight:500}
+.note-list{margin:0 0 8px;list-style:none;font-size:12.5px;color:var(--text-3);line-height:1.75}
+.note-list li{padding-left:12px;position:relative}
+.note-list li::before{content:"·";position:absolute;left:3px;color:var(--text-2)}
+.note-box textarea{width:100%;font-size:13px;line-height:1.7}
+.srcbar{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:9px 24px;border-top:1px solid var(--line);flex-wrap:wrap}
+.src-info{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--text-2);flex-wrap:wrap}
+.src-acts{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+
+/* ---------------- 数据库 / 列表 ---------------- */
+.db-toolbar{display:flex;align-items:center;gap:10px;padding:14px 0 8px;flex-wrap:wrap}
+.db-name{font-size:14px;font-weight:600}
+.db-count{font-size:12.5px;color:var(--text-2)}
+.db-right{margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.tbl-wrap{overflow-x:auto;border-top:1px solid var(--line)}
+table.tbl{width:100%;min-width:760px;border-collapse:collapse}
+table.tbl td:first-child{min-width:220px}
+table.tbl th{text-align:left;font-size:12.5px;font-weight:500;color:var(--text-2);padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap;background:#FBFBFA}
+table.tbl td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle;font-size:13.5px}
+table.tbl tbody tr:hover{background:var(--bg)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.db-list{border-top:1px solid var(--line)}
+.db-row{display:flex;gap:16px;align-items:flex-start;padding:13px 10px;border-bottom:1px solid var(--line)}
+.db-row:hover{background:var(--bg)}
+.row-main{flex:1 1 auto;min-width:0}
+.row-title{font-size:15px;font-weight:500;line-height:1.5;overflow-wrap:anywhere}
+.row-sub{font-size:13.5px;color:var(--text-3);line-height:1.7;margin-top:3px;overflow-wrap:anywhere}
+.row-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:7px;font-size:12.5px;color:var(--text-2)}
+.row-acts{display:flex;gap:6px;align-items:center;flex:0 0 auto;flex-wrap:wrap;justify-content:flex-end}
+.bar{height:4px;border-radius:3px;background:#EDEDEB;overflow:hidden;margin:9px 0 7px;display:flex;max-width:520px}
+.bar i{display:block;height:100%;background:var(--blue)}
+.bar i.b-pend{background:#DCDCDA}
+.bar i.b-fail{background:#E06C5A}
+.job-line{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--text-2);margin-top:2px}
+.kv-l{display:grid;grid-template-columns:92px minmax(0,1fr);gap:8px 16px;font-size:13.5px;align-items:baseline}
+.kv-l dt{color:var(--text-2)}
+
+/* ---------------- 设置 ---------------- */
+.set-block{margin:0 0 34px;max-width:760px}
+.set-h{font-size:15px;font-weight:600;margin-bottom:2px}
+.set-sub{font-size:13px;color:var(--text-2);margin-bottom:12px;line-height:1.7}
+.set-row{display:flex;gap:24px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)}
+.set-label{font-size:14px;flex:0 0 190px}
+.set-desc{font-size:12.5px;color:var(--text-2);line-height:1.7;margin-top:3px}
+.set-ctl{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+input[type="text"],input[type="url"],input[type="search"],input[type="password"],select,textarea{
+  border:1px solid rgba(55,53,47,.16);border-radius:3px;background:#fff;padding:5px 8px;font-size:14px;max-width:100%;
+}
+input:focus,select:focus,textarea:focus{outline:none;box-shadow:0 0 0 1px var(--blue);border-color:var(--blue)}
+.sfield input[type="search"]{border:0;padding:0;background:transparent;box-shadow:none;height:100%}
+input[disabled]{background:#F7F7F5;color:var(--text-2);cursor:not-allowed;border-style:dashed}
+input[type="file"]{font-size:13px}
+textarea{resize:vertical;min-height:64px;line-height:1.7;width:100%}
+label.lbl{display:block;font-size:13px;color:var(--text-2);margin-bottom:4px}
+.field{margin-bottom:14px}
+.help{font-size:12px;color:var(--text-2);line-height:1.7;margin-top:4px}
+
+/* ---------------- 抽屉 ---------------- */
+.drawer{
+  position:fixed;top:0;right:0;bottom:0;width:360px;max-width:100%;background:#fff;
+  border-left:1px solid var(--line);z-index:60;display:flex;flex-direction:column;
+  box-shadow:-8px 0 24px rgba(55,53,47,.08);
+}
+.drawer[hidden]{display:none}
+.dr-head{padding:12px 16px 10px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:10px}
+.dr-head h2{font-size:16px;font-weight:600}
+.dr-note{font-size:12px;color:var(--text-2);margin-top:2px}
+.dr-body{flex:1 1 auto;overflow-y:auto;padding:14px 16px 28px}
+.dr-body h3{font-size:12.5px;color:var(--text-2);font-weight:500;margin-bottom:6px}
+.dr-body section{margin-bottom:20px}
+.dr-list li{font-size:13px;color:var(--text-3);line-height:1.75;padding:7px 0;border-bottom:1px solid var(--line)}
+.dr-list li:last-child{border-bottom:0}
+.ev{display:inline-block;margin-top:4px;font-size:12.5px;color:var(--blue);text-align:left}
+.ev:hover{text-decoration:underline}
+.ans{border:1px solid var(--line);border-radius:5px;background:#FBFBFA;padding:12px;font-size:13px;line-height:1.8;color:var(--text-3)}
+.ans ol{margin:6px 0 0;padding-left:18px;list-style:decimal}
+.ans li{margin-bottom:8px}
+.ans .lead{font-size:12px;color:var(--text-2)}
+.ans .adv{margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+.icon-btn{width:26px;height:26px;border-radius:3px;display:flex;align-items:center;justify-content:center;color:var(--text-2);flex:0 0 auto}
+.icon-btn:hover{background:var(--hover)}
+.scrim{position:fixed;inset:0;background:rgba(55,53,47,.3);z-index:55}
+.scrim[hidden]{display:none}
+.nav-scrim{position:fixed;inset:0;background:rgba(55,53,47,.3);z-index:29}
+.nav-scrim[hidden]{display:none}
+
+/* ---------------- 对话框 ---------------- */
+.modal{border:1px solid var(--line);border-radius:6px;padding:0;width:min(520px,calc(100vw - 24px));background:#fff;color:var(--text)}
+.modal::backdrop{background:rgba(55,53,47,.35)}
+.modal-head{display:flex;align-items:flex-start;gap:10px;padding:14px 16px 10px;border-bottom:1px solid var(--line);margin:0}
+.modal-head h2{font-size:16px;font-weight:600}
+.modal-note{font-size:12.5px;color:var(--text-2);margin-top:3px;line-height:1.7}
+.modal-body{padding:16px}
+.modal-foot{display:flex;gap:8px;justify-content:flex-end;padding:4px 0 0;flex-wrap:wrap}
+.quote-box{border:1px solid var(--line);border-radius:5px;background:#FBFBFA;padding:10px 12px;max-height:180px;overflow:auto;font-size:14px;line-height:1.95}
+.file-pick{border:1px dashed var(--line);border-radius:5px;padding:12px;background:#FBFBFA;font-size:13px;line-height:1.8}
+.file-pick .fname{font-weight:600}
+fieldset{border:0;padding:0;margin:0}
+
+/* ---------------- 提示条 ---------------- */
+.toast{
+  position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:80;background:#37352F;color:#fff;
+  border-radius:5px;padding:9px 12px;font-size:13px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  max-width:calc(100vw - 24px);
+}
+.toast[hidden]{display:none}
+.t-btn{border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:3px;padding:1px 8px;font-size:12.5px}
+.t-btn:hover{background:rgba(255,255,255,.12)}
+.t-close{color:#fff;font-size:15px;line-height:1;opacity:.75}
+.t-close:hover{opacity:1}
+
+/* ---------------- 响应式 ---------------- */
+.only-sm{display:none}
+@media (max-width:1180px){
+  .results{width:286px;flex-basis:286px}
+}
+@media (max-width:1024px){
+  :root{--sb:200px}
+  .page-head,.page-head.sm,.search-row,.viewbar,.page-body{padding-left:28px;padding-right:28px}
+  .cmp{grid-template-columns:minmax(0,1fr)}
+  .cmp-col+.cmp-col{border-left:0;border-top:1px solid var(--line)}
+  .cmp-scroll{max-height:46vh}
+  .set-label{flex-basis:160px}
+}
+@media (max-width:850px){
+  .only-sm{display:inline-flex}
+  .tb-menu{display:flex}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);box-shadow:none;width:260px;flex-basis:260px}
+  body.nav-open .sidebar{transform:none;box-shadow:0 0 24px rgba(55,53,47,.16)}
+  .app{flex-direction:row}
+  .split{overflow-y:auto;display:block}
+  .split[data-pane="list"] .reader{display:none}
+  .split[data-pane="detail"] .results{display:none}
+  .results{width:100%;flex:1 1 auto;border-right:0}
+  .res-list{overflow-y:visible}
+  .reader{min-height:auto}
+  .panel{overflow-y:visible}
+  .scan-scroll{max-height:56vh}
+  .cmp-scroll{max-height:none}
+  .cmp-text{overflow-y:visible}
+  .page-title{font-size:28px}
+  .page-head{padding:24px 20px 4px}
+  .page-head.sm{padding:18px 20px 4px}
+  .search-row,.viewbar,.page-body{padding-left:20px;padding-right:20px}
+  .db-row{flex-direction:column;gap:8px}
+  .row-acts{justify-content:flex-start}
+  .kv-l{grid-template-columns:minmax(0,1fr);gap:2px 0}
+  .set-row{flex-direction:column;gap:8px}
+  .set-label{flex-basis:auto}
+  .drawer{width:100%}
+  .srcbar .src-acts{margin-left:0;width:100%}
+}
+@media (max-width:560px){
+  .tb-preview{overflow:hidden;text-overflow:ellipsis;max-width:120px}
+  .page-title{font-size:24px}
+  .sfield{flex:1 1 100%;max-width:none}
+  .vfilters{width:100%;margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到主内容</a>
+
+<div class="app">
+  <!-- 侧栏 -->
+  <aside class="sidebar" id="sidebar">
+    <button class="ws-btn" type="button" aria-label="工作区：个人图书馆（暂定名）">
+      <span class="ws-avatar" aria-hidden="true">文</span>
+      <span class="ws-name">个人图书馆</span>
+      <svg class="chev" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg>
+    </button>
+    <div class="sb-scroll">
+      <p class="sb-group">工作区</p>
+      <nav id="nav" aria-label="主导航"></nav>
+      <p class="sb-group">专题</p>
+      <nav id="nav-topics" aria-label="专题与项目"></nav>
+    </div>
+    <div class="sb-foot">
+      <p class="sb-row"><span class="live-dot" aria-hidden="true"></span>本地工作区</p>
+      <p class="sb-row" style="cursor:default"><span class="prev-tag">设计预览</span><span class="sb-muted" style="padding:0">演示数据</span></p>
+      <button class="sb-row" type="button" data-act="about">演示说明与限制</button>
+    </div>
+  </aside>
+
+  <div class="col">
+    <header class="topbar">
+      <button class="tb-menu" type="button" data-act="menu" aria-label="打开导航" aria-controls="sidebar" aria-expanded="false">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+      </button>
+      <nav class="crumbs" aria-label="面包屑">
+        <span>个人图书馆</span><span aria-hidden="true">/</span><span class="crumb-cur" id="crumb-cur">全库检索</span>
+      </nav>
+      <div class="tb-right">
+        <button class="tb-btn" type="button" data-act="drawer-open">研究助手</button>
+        <span class="tb-preview">设计预览 · 演示数据</span>
+        <button class="tb-icon" type="button" data-act="about" aria-label="演示说明与限制">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.2v4M8 5.1v.1"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="workspace" id="main"></main>
+  </div>
+</div>
+
+<div class="nav-scrim" id="nav-scrim" data-act="nav-scrim" hidden></div>
+
+<!-- 研究助手抽屉 -->
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" aria-label="研究助手（AI 模拟）" hidden></aside>
+
+<!-- 通用对话框 -->
+<dialog class="modal" id="modal" aria-labelledby="modal-title">
+  <form method="dialog" class="modal-head">
+    <div style="min-width:0">
+      <h2 id="modal-title">对话框</h2>
+      <p class="modal-note" id="modal-note"></p>
+    </div>
+    <button class="icon-btn" value="close" aria-label="关闭对话框" type="submit">✕</button>
+  </form>
+  <div class="modal-body" id="modal-body"></div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden>
+  <span id="toast-msg"></span>
+  <span id="toast-acts"></span>
+  <button class="t-close" type="button" data-act="toast-close" aria-label="关闭提示">✕</button>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ==========================================================
+     0. 小工具
+     ========================================================== */
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var ICON = {
+    search:   '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="4.3"/><path d="M10.3 10.3 13.5 13.5"/></svg>',
+    library:  '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 3.2h4.2v9.6H2.5z"/><path d="M7.6 3.2h5.9v9.6H7.6z"/></svg>',
+    jobs:     '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 5.5v-3h3"/><path d="M13.5 5.5v-3h-3"/><path d="M2.5 10.5v3h3"/><path d="M13.5 10.5v3h-3"/><path d="M2.5 8h11"/></svg>',
+    excerpts: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3.2h3.2v3.2H4z"/><path d="M9 3.2h3.2v3.2H9z"/><path d="M2.8 9.6h10.4"/><path d="M2.8 12.4h7"/></svg>',
+    projects: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.4 14 5.4 8 8.4 2 5.4z"/><path d="M2.4 8.6 8 11.4l5.6-2.8"/></svg>',
+    settings: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M2.5 4.6h11"/><path d="M2.5 11.4h11"/><circle cx="6" cy="4.6" r="1.6"/><circle cx="10.6" cy="11.4" r="1.6"/></svg>'
+  };
+  var NAV = [
+    { id: 'search',   label: '全库检索', icon: 'search',   grp: 'work' },
+    { id: 'library',  label: '文献库',   icon: 'library',  grp: 'work' },
+    { id: 'jobs',     label: '识别任务', icon: 'jobs',     grp: 'work' },
+    { id: 'excerpts', label: '摘录集',   icon: 'excerpts', grp: 'work' },
+    { id: 'settings', label: '设置',     icon: 'settings', grp: 'work' },
+    { id: 'projects', label: '研究项目', icon: 'projects', grp: 'topic' }
+  ];
+  var CAT = ['文物建筑', '沿革地理', '碑刻石刻', '民俗风物', '教育制度', '待归类'];
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function mark(text, q) {
+    var out = esc(text);
+    if (!q) return out;
+    var e = esc(q);
+    return out.split(e).join('<mark>' + e + '</mark>');
+  }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function cn(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function snippet(rec, q, len) {
+    var t = String(rec.text).replace(/\s+/g, ' ');
+    var i = q ? t.indexOf(q) : -1;
+    if (i < 0) i = 0;
+    var start = Math.max(0, i - 26);
+    var end = Math.min(t.length, start + (len || 104));
+    return (start > 0 ? '…' : '') + mark(t.slice(start, end), q) + (end < t.length ? '…' : '');
+  }
+  function lines(rec) {
+    return String(rec.text).split('\n').filter(function (l) { return l.trim().length; });
+  }
+  function defaultQuote(rec) {
+    var ls = lines(rec), q = state.query.trim(), i, pick = '';
+    /* 1) 优先取包含检索词、且足够长的一句话 */
+    for (i = 0; i < ls.length; i++) {
+      if (q && ls[i].indexOf(q) >= 0 && ls[i].length > 24) { pick = ls[i]; break; }
+    }
+    /* 2) 否则取与本页小节标题相关的那一句 */
+    if (!pick && rec.section) {
+      var base = String(rec.section).replace(/[（(].*?[)）]/g, '').replace(/^[一二三四五六七八九十]+、/, '');
+      var keys = [base];
+      if (base.length >= 3) keys.push(base.slice(0, 3));
+      if (base.length >= 2) keys.push(base.slice(0, 2));
+      for (var k = 0; k < keys.length && !pick; k++) {
+        if (!keys[k]) continue;
+        for (i = 0; i < ls.length; i++) {
+          if (ls[i].indexOf(keys[k]) >= 0 && ls[i].length > 24) { pick = ls[i]; break; }
+        }
+      }
+    }
+    /* 3) 兜底：取本页最长的一句 */
+    if (!pick) { for (i = 0; i < ls.length; i++) { if (ls[i].length > 24) { pick = ls[i]; break; } } }
+    if (!pick) pick = ls[0] || '';
+    return pick;
+  }
+  function isHeading(l) {
+    return /^(第[一二三四五六七八九十]+[节章]|[一二三四五六七八九十]+、)/.test(l.trim());
+  }
+  function fileSize(bytes) {
+    if (!bytes && bytes !== 0) return '';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(0) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+  }
+  var uid = 100;
+  function nextId(p) { uid += 1; return p + '-' + uid; }
+
+  /* ==========================================================
+     1. 演示数据（全部为示例，非真实文献库）
+     ========================================================== */
+  var DOCS = {
+    'doc-ankang':  { title: '安康县志（第三十一篇 文物）', kind: 'scan',  kindLabel: '扫描件', pages: 12 },
+    'doc-hanzhong':{ title: '汉中地区文化文物志',          kind: 'text',  kindLabel: '文本层', pages: 7 },
+    'doc-suizhou': { title: '随州地方志（文物古迹）',       kind: 'scan',  kindLabel: '扫描件', pages: 17 },
+    'doc-xiangfan':{ title: '襄樊市志（名胜古迹）',         kind: 'scan',  kindLabel: '扫描件', pages: 32 }
+  };
+
+  var RECORDS = [
+    {
+      id: 'u-ak-7', doc: 'doc-ankang', filePage: 7, printed: 775,
+      section: '二、文庙', ver: 'pending',
+      image: 'assets/ankang-775.png', imageNote: 'assets/ankang-775.png · 1012 × 1417',
+      conf: '0.91', engine: '本地 OCR（演示数值）',
+      correction: [
+        '「附连勾头花并」在扫描件中易误识为「附连沟头花井」。',
+        '数字「4.66」处墨迹粘连，容易少识一位。',
+        '「牛山庙碑」末行残缺，示例文本以「……」示意缺失。'
+      ],
+      text: '第三十一篇　文物 · 775\n二、文庙\n位于安康新城东北角，元代建筑，明清时多次维修扩建。现存大成殿一座，雄伟壮观，面阔5间，外有两廊，主厅阔4.66米，进深6米，柱径0.6米，高5米，廊柱高6米。三昂四斗四拱，四周屋檐用附连勾头花并和猫头筒瓦，是本县有保护价值的古建筑。\n三、龙头寺\n位于本县皂城乡龙王山坝，与祖师殿相距百米，建于明代天顺元年。正殿为五架大架，硬山顶，面阔10米，进深5米，面积50平方米。\n四、祖师殿\n位于本县皂城乡龙王山坝，建于明代天启年间。面阔7米，进深6米，面积42平方米。\n五、关帝庙\n位于本县大河区双溪乡，建于清同治三年（1864），1981年文物普查登记，现为双溪中学校址。\n六、关帝庙事\n现为双溪中学校舍，建于清代同治三年（1864）。面阔4米，亭下本部依岩石雕凿雄狮一尊，高1.5米，长2米，作回首后跳跃状，保存完好。\n七、兴隆寺\n位于本县大河乡蔡家坝，现为兴红小学校址。建于清代同治年间，现存庙房11间，除部分装饰已坏，其余保存完好。\n第三章　石刻\n第一节　石碣\n一、牛山庙碑\n该碑嵌本县宫坪乡牛山庙墙壁内，1981年文物普查登记。牛山庙创建于宋代，后世……'
+    },
+    {
+      id: 'u-ak-11', doc: 'doc-ankang', filePage: 11, printed: 779,
+      section: '文庙学宫', ver: 'pending',
+      conf: '0.78', engine: '本地 OCR（演示数值）',
+      correction: ['「廪生」字迹漫漶，示例识别为「廛生」，待校订。'],
+      text: '第四章　学校\n一、文庙学宫\n明清时期，本县学宫与文庙同址，设训导一人，额设生员廪生二十名。乾隆年间重修大成殿，今存棂星门基址三座，柱础尚存。'
+    },
+    {
+      id: 'u-ak-4', doc: 'doc-ankang', filePage: 4, printed: 772,
+      section: '孔庙（别名演示）', ver: 'pending',
+      conf: '0.83', engine: '本地 OCR（演示数值）',
+      correction: ['「献殿」与「寝宫」之间的顿号缺失，属示例识别问题。'],
+      text: '孔庙（占位示例）\n此处为孔庙条目的示意识别文字，仅用于讨论别名检索交互，不代表该书的真实记载。'
+    },
+    {
+      id: 'u-ak-12', doc: 'doc-ankang', filePage: 12, printed: 780,
+      section: '第二节　石碣与石刻', ver: 'pending',
+      conf: '0.88', engine: '本地 OCR（演示数值）',
+      correction: ['碑铭行文字号偏小，示例文本中若干字以常见写法补足，仅示意。'],
+      text: '第三章　石刻\n第二节　石碣与石刻\n二、碑铭　县境碑铭散见于各区，碑高不过四尺，文字多漫漶，1981年文物普查时逐方登记。'
+    },
+    {
+      id: 'u-hz-4', doc: 'doc-hanzhong', filePage: 4, printed: 738,
+      section: '诸葛庙（武侯祠）', ver: 'pending',
+      image: 'assets/hanzhong-738.png', imageNote: 'assets/hanzhong-738.png · 854 × 1247 · 文本层文件的页面渲染，仅供对照',
+      conf: '—', engine: '文本层（无 OCR）',
+      correction: [
+        '本页为双栏排版，示例文本按栏合并，未保留栏序。',
+        '「伞铺街」的「伞」字在示例文本中可能识别为「散」，待校订。'
+      ],
+      text: '738　文化文物志\n琉璃照壁　琉璃照壁在市内原有两处，一处在伞铺街府庙大门前，壁高6.45米，宽1.23米，长13.6米。\n诸葛庙　又名武侯祠，位于南关正街。原庙大门前有石碑两通（已毁），各高约2米，上载康熙年间重修，房屋五、六大院，道士四、五十人，庙产40多亩。\n钟鼓楼　此楼为方形古老式三层阁亭，位于市内南部四街之中心，系砖木结构，筒瓦盖顶。\n第三节　古墓葬\n市境内的古墓葬，多分布在西、东、北三个方位，其中从石马坡至褒河、武乡和七里至铺镇一带较为密集。'
+    },
+    {
+      id: 'u-hz-2', doc: 'doc-hanzhong', filePage: 2, printed: 736,
+      section: '文庙（旧志）', ver: 'accepted',
+      conf: '—', engine: '文本层（无 OCR）',
+      correction: ['此处为演示占位文字；正式版应使用实际文件提取文本。'],
+      text: '第二节　学校与坛庙\n文庙　汉中文庙旧址在东关，庙前泮池尚存石栏残段。据旧志载，明洪武年间由府学改设，成化七年重修，今仅存戟门基址。'
+    },
+    {
+      id: 'u-hz-6', doc: 'doc-hanzhong', filePage: 6, printed: 740,
+      section: '古墓葬（战国墓葬）', ver: 'accepted',
+      conf: '—', engine: '文本层（无 OCR）',
+      correction: ['此处为演示占位文字；正式版应使用实际文件提取文本。'],
+      text: '古墓葬\n战国墓葬　战国时期的墓葬，多分布在张寨、宗营至杨家山一带。70年代在周寨村北端发现战国中期的墓葬三座，三墓的间距3—4米，均头西脚东，长方形竖穴墓，无墓道，无封土堆，亦无葬具。'
+    },
+    {
+      id: 'u-sz-9', doc: 'doc-suizhou', filePage: 9, printed: 412,
+      section: '三、文庙旧址', ver: 'pending',
+      conf: '0.61', engine: '本地 OCR（演示数值）',
+      correction: ['该页墨色不匀，示例置信度较低（演示数值），建议人工核验。'],
+      text: '第五章　古迹\n三、文庙旧址\n文庙旧址在县城西南隅，今存照壁一堵、泮池遗迹一处。旧志载大成殿五间，清光绪间倾圮。碑石散佚，存者三通。'
+    },
+    {
+      id: 'u-sz-14', doc: 'doc-suizhou', filePage: 14, printed: 417,
+      section: '铁树与古木', ver: 'pending',
+      conf: '0.74', engine: '本地 OCR（演示数值）',
+      correction: ['「祥瑞」二字笔画粘连，属示例识别问题。'],
+      text: '古迹补遗\n铁树　县城东门外古铁树一株，枯而尚存，清人以为祥瑞，旁立石碑记其岁数。1981年文物普查登记。'
+    },
+    {
+      id: 'u-sz-3', doc: 'doc-suizhou', filePage: 3, printed: 406,
+      section: '城池沿革', ver: 'pending',
+      conf: '0.86', engine: '本地 OCR（演示数值）',
+      correction: ['「瓮城」的「瓮」字在示例文本中可能识别为「翁」。'],
+      text: '第二章　城池\n城池沿革　随州古城垣为明清两代所筑，四门皆有楼。民国年间拆毁西门瓮城，今仅存残段。'
+    },
+    {
+      id: 'u-xf-21', doc: 'doc-xiangfan', filePage: 21, printed: 688,
+      section: '文庙', ver: 'pending',
+      conf: '0.69', engine: '本地 OCR（演示数值）',
+      correction: ['「棂星门」的「棂」字容易误识，示例文本需人工核验。'],
+      text: '第七卷　学校\n文庙　襄樊文庙在城东北隅，明洪武三年建，清康熙三十五年重修。现存大成殿一座，面阔七间，棂星门三间，今为市文化馆占用。'
+    },
+    {
+      id: 'u-xf-30', doc: 'doc-xiangfan', filePage: 30, printed: 697,
+      section: '米公祠', ver: 'pending',
+      conf: '0.80', engine: '本地 OCR（演示数值）',
+      correction: ['石刻小字行距很密，示例文本中数字可能缺位。'],
+      text: '名胜古迹\n米公祠　旧址在城西，元、明间屡修。今存祠堂三间及米氏父子石刻数方，1981年文物普查登记。'
+    },
+    {
+      id: 'u-xf-5', doc: 'doc-xiangfan', filePage: 5, printed: 672,
+      section: '山川', ver: 'pending',
+      conf: '0.93', engine: '本地 OCR（演示数值）',
+      correction: ['该页字迹清楚，示例识别问题较少。'],
+      text: '第一卷　地理\n山川　襄樊境内汉江自西北入境，曲折东南出境，沿岸多冲积洲渚。'
+    }
+  ];
+
+  /* 「别名扩展」演示：仅为「文庙」预置的一组示例相关项 */
+  var EXPANDED_DEMO = {
+    '文庙': ['u-ak-4']
+  };
+
+  var VER_LABEL = { accepted: '已核验', pending: '待核验', stale: '已变更' };
+
+  var SEED_EXCERPTS = [
+    { id: 'ex-1', rec: 'u-ak-7', quote: '位于安康新城东北角，元代建筑，明清时多次维修扩建。现存大成殿一座，雄伟壮观，面阔5间，外有两廊。', cat: '文物建筑', note: '已对照扫描页确认，原文无异文。', ver: 'accepted', at: '2026-10-14 21:12' },
+    { id: 'ex-2', rec: 'u-hz-4', quote: '诸葛庙　又名武侯祠，位于南关正街。原庙大门前有石碑两通（已毁），各高约2米，上载康熙年间重修', cat: '文物建筑', note: '来自扩展检索的演示结果，相关性需人工确认。', ver: 'pending', at: '2026-10-14 20:50' },
+    { id: 'ex-3', rec: 'u-sz-9', quote: '文庙旧址在县城西南隅，今存照壁一堵、泮池遗迹一处。', cat: '教育制度', note: '旧摘录，原页已校订，需复核。', ver: 'stale', at: '2026-10-13 19:30' },
+    { id: 'ex-4', rec: 'u-xf-21', quote: '现存大成殿一座，面阔七间，棂星门三间，今为市文化馆占用。', cat: '文物建筑', note: '识别置信度较低，保存后仍需核验。', ver: 'pending', at: '2026-10-12 18:20' }
+  ];
+
+  var SEED_FILES = [
+    { id: 'f1', name: '安康县志（第三十一篇 文物）.pdf', doc: 'doc-ankang', kind: 'scan', pages: 12, done: 5, status: '部分待核验', at: '2026-10-14 21:03', demo: false },
+    { id: 'f2', name: '汉中地区文化文物志.pdf', doc: 'doc-hanzhong', kind: 'text', pages: 7, done: 7, status: '文本层可用', at: '2026-10-14 20:41', demo: false },
+    { id: 'f3', name: '随州地方志（文物古迹）.pdf', doc: 'doc-suizhou', kind: 'scan', pages: 17, done: 9, status: '部分待核验', at: '2026-10-13 19:22', demo: false },
+    { id: 'f4', name: '襄樊市志（名胜古迹）.pdf', doc: 'doc-xiangfan', kind: 'scan', pages: 32, done: 12, status: '部分待核验', at: '2026-10-12 18:05', demo: false }
+  ];
+
+  var SEED_JOBS = [
+    { id: 'j1', file: '随州地方志（文物古迹）.pdf', total: 17, done: 9, pend: 6, fail: 2, paused: false, mode: '自动（演示）' },
+    { id: 'j2', file: '襄樊市志（名胜古迹）.pdf', total: 32, done: 12, pend: 20, fail: 0, paused: false, mode: '自动（演示）' },
+    { id: 'j3', file: '安康县志（第三十一篇 文物）.pdf', total: 12, done: 5, pend: 5, fail: 2, paused: true, mode: '强制 OCR（演示）' },
+    { id: 'j4', file: '汉中地区文化文物志.pdf', total: 7, done: 7, pend: 0, fail: 0, paused: false, mode: '仅文本层（演示）' }
+  ];
+
+  var PROJECTS = [
+    {
+      id: 'p1', name: '安康汉江沿岸寺观与学宫考', state: '资料整理中',
+      q: '安康旧志中的庙宇记述能否与今天的现址一一对应？',
+      plan: ['检索「文庙」等词', '保存文庙条目摘录', '对照扫描页核验', '与襄樊同类条目比对'],
+      keyword: '文庙'
+    },
+    {
+      id: 'p2', name: '汉中古墓葬资料汇总', state: '未开始',
+      q: '汉中地区战国至西汉墓葬的分布与随葬器物如何记载？',
+      plan: ['检索古墓葬条目', '登记出土器物名称', '补充随州同类材料'],
+      keyword: '古墓葬'
+    },
+    {
+      id: 'p3', name: '襄樊米氏石刻辑录', state: '演示占位',
+      q: '米公祠石刻的释文与年代如何整理？',
+      plan: ['检索米公祠', '比对石刻条目', '导出摘录（占位功能）'],
+      keyword: '石刻'
+    }
+  ];
+
+  /* ==========================================================
+     2. 状态
+     ========================================================== */
+  var state = {
+    view: 'search',
+    navOpen: false,
+    listView: 'all',
+    query: '文庙',
+    mode: 'literal',
+    scope: 'all',
+    status: 'all',
+    kind: 'all',
+    selected: 'u-ak-7',
+    tab: 'scan',
+    pane: 'list',
+    zoom: 'fit',
+    exStatus: 'all',
+    exDoc: 'all',
+    projOpen: null,
+    ask: { q: '', a: null },
+    excerpts: SEED_EXCERPTS.slice(),
+    files: SEED_FILES.slice(),
+    jobs: SEED_JOBS.slice(),
+    corrections: {},
+    unitVer: {},
+    settings: {
+      baseUrl: 'http://localhost:11434/v1',
+      model: 'qwen2.5:7b',
+      envBase: 'LIT_LLM_BASE_URL',
+      envModel: 'LIT_LLM_MODEL',
+      density: 'normal'
+    }
+  };
+
+  var VIEW_META = {
+    search:   { title: '全库检索', icon: 'search', desc: '从县志与丛书中找到记载，回到原页核对与摘录。' },
+    library:  { title: '文献库', icon: 'library', desc: '集中管理原件、书目信息和识别状态。' },
+    jobs:     { title: '识别任务', icon: 'jobs', desc: '查看处理进度，暂停、继续或重试失败页。' },
+    excerpts: { title: '摘录集', icon: 'excerpts', desc: '保存原文，整理分类，每一条都能返回来源。' },
+    projects: { title: '研究项目', icon: 'projects', desc: '围绕一个问题组织文献、摘录与分析。' },
+    settings: { title: '设置', icon: 'settings', desc: '配置自己的模型服务与本地工作偏好。' }
+  };
+
+  function docOf(id) { return DOCS[id] || { title: '（未知来源）', kindLabel: '—' }; }
+  function recOf(id) {
+    for (var i = 0; i < RECORDS.length; i++) { if (RECORDS[i].id === id) return RECORDS[i]; }
+    return null;
+  }
+  function verOf(rec) { return state.unitVer[rec.id] || rec.ver; }
+
+  /* ==========================================================
+     3. 检索
+     ========================================================== */
+  function isLiteralHit(rec, q) { return !q || rec.text.indexOf(q) >= 0; }
+  function isDemoExpansion(rec, q) {
+    var ids = EXPANDED_DEMO[q];
+    return !!(ids && ids.indexOf(rec.id) >= 0);
+  }
+  function computeResults() {
+    var q = state.query.trim();
+    var out = [];
+    for (var i = 0; i < RECORDS.length; i++) {
+      var r = RECORDS[i];
+      var lit = isLiteralHit(r, q);
+      var exp = state.mode === 'expanded' && isDemoExpansion(r, q);
+      if (!lit && !exp) continue;
+      if (state.listView === 'pending' && verOf(r) === 'accepted') continue;
+      if (state.scope !== 'all' && r.doc !== state.scope) continue;
+      if (state.kind !== 'all' && docOf(r.doc).kind !== state.kind) continue;
+      if (state.status !== 'all') {
+        var vs = state.unitVer[r.id] || r.ver;
+        if (state.status === 'demo') { if (!exp) continue; }
+        else if (vs !== state.status) continue;
+      }
+      out.push({ rec: r, literal: lit, demo: !lit });
+    }
+    out.sort(function (a, b) {
+      if (a.literal !== b.literal) return a.literal ? -1 : 1;
+      return a.rec.filePage - b.rec.filePage;
+    });
+    return out;
+  }
+  function countLiteral() {
+    var q = state.query.trim(), n = 0;
+    for (var i = 0; i < RECORDS.length; i++) { if (isLiteralHit(RECORDS[i], q)) n++; }
+    return n;
+  }
+  function countDemoExpansion() {
+    var q = state.query.trim(), ids = EXPANDED_DEMO[q];
+    if (!ids) return 0;
+    var n = 0;
+    for (var i = 0; i < RECORDS.length; i++) {
+      if (ids.indexOf(RECORDS[i].id) >= 0 && !isLiteralHit(RECORDS[i], q)) n++;
+    }
+    return n;
+  }
+
+  /* ==========================================================
+     4. 片段渲染
+     ========================================================== */
+  function renderNav() {
+    var counts = {
+      library: state.files.length,
+      jobs: state.jobs.filter(function (j) { return j.pend > 0 || j.fail > 0; }).length,
+      excerpts: state.excerpts.length
+    };
+    function item(n) {
+      var cur = state.view === n.id ? ' aria-current="page"' : '';
+      var badge = counts[n.id] ? '<span class="nav-badge num">' + counts[n.id] + '</span>' : '';
+      return '<button type="button" class="nav-item" data-act="nav" data-view="' + n.id + '"' + cur + '>' +
+        '<span class="nav-ico" aria-hidden="true">' + ICON[n.icon] + '</span>' +
+        '<span class="nav-txt">' + n.label + '</span>' + badge + '</button>';
+    }
+    $('#nav').innerHTML = NAV.filter(function (n) { return n.grp === 'work'; }).map(item).join('');
+    $('#nav-topics').innerHTML = NAV.filter(function (n) { return n.grp === 'topic'; }).map(item).join('') +
+      PROJECTS.map(function (p) {
+        return '<button type="button" class="nav-item sub" data-act="proj-search" data-kw="' + esc(p.keyword) + '">' +
+          '<span class="nav-txt">' + esc(p.name) + '</span></button>';
+      }).join('');
+  }
+
+  var VER_TAG = { accepted: 'tag tag-blue', pending: 'tag tag-yellow', stale: 'tag tag-red' };
+  function verChip(ver) {
+    return '<span class="state ' + (VER_TAG[ver] || 'tag tag-gray') + '">' + VER_LABEL[ver] + '</span>';
+  }
+  function pageHead(view, desc) {
+    var m = VIEW_META[view];
+    return '<div class="page-head"><div class="page-icon" aria-hidden="true">' + ICON[m.icon] + '</div>' +
+      '<h1 class="page-title">' + m.title + '</h1>' +
+      '<p class="page-desc">' + (desc || m.desc) + '</p></div>';
+  }
+  function propRow(k, v) {
+    return '<div class="prop"><span class="pk">' + k + '</span><span class="pv">' + v + '</span></div>';
+  }
+
+  function renderSearch() {
+    var res = computeResults();
+    var q = state.query.trim();
+    var expanded = state.mode === 'expanded';
+    var sel = recOf(state.selected);
+    if (sel && !res.some(function (x) { return x.rec.id === sel.id; })) sel = null;
+
+    var head =
+      '<div class="page-head sm">' +
+        '<div class="page-icon" aria-hidden="true">' + ICON.search + '</div>' +
+        '<h1 class="page-title">' + VIEW_META.search.title + '</h1>' +
+        '<p class="page-desc">' + VIEW_META.search.desc + '</p>' +
+      '</div>' +
+      '<div class="search-row">' +
+        '<label class="sr" for="q">检索词</label>' +
+        '<div class="sfield"><span aria-hidden="true" style="color:var(--text-2)">' + ICON.search + '</span>' +
+          '<input id="q" type="search" value="' + esc(q) + '" placeholder="在示例文献中检索，例如 文庙" autocomplete="off"></div>' +
+        '<button class="btn btn-primary" type="button" data-act="search-literal">搜索</button>' +
+        '<button class="btn" type="button" data-act="search-semantic">别名扩展</button>' +
+        '<span class="s-hint">' + (expanded
+          ? '别名扩展为演示：示例映射「文庙 → 孔庙」，未调用模型'
+          : '字面匹配：命中的词在片段中以底色标出') + '</span>' +
+      '</div>' +
+      '<div class="viewbar">' +
+        '<button type="button" class="vtab" data-act="list-view" data-v="all" aria-selected="' +
+          (state.listView === 'all' ? 'true' : 'false') + '">全部结果</button>' +
+        '<button type="button" class="vtab" data-act="list-view" data-v="pending" aria-selected="' +
+          (state.listView === 'pending' ? 'true' : 'false') + '">待核验</button>' +
+        '<span class="vcount num">' + res.length + ' 条</span>' +
+        '<div class="vfilters">' +
+          '<select class="qselect" data-act="f-scope" aria-label="来源范围">' +
+            '<option value="all">来源：全部</option>' +
+            Object.keys(DOCS).map(function (k) {
+              return '<option value="' + k + '"' + (state.scope === k ? ' selected' : '') + '>' + esc(DOCS[k].title) + '</option>';
+            }).join('') +
+          '</select>' +
+          '<select class="qselect" data-act="f-kind" aria-label="版式">' +
+            '<option value="all"' + (state.kind === 'all' ? ' selected' : '') + '>版式：不限</option>' +
+            '<option value="scan"' + (state.kind === 'scan' ? ' selected' : '') + '>版式：扫描件</option>' +
+            '<option value="text"' + (state.kind === 'text' ? ' selected' : '') + '>版式：文本层</option>' +
+          '</select>' +
+          '<select class="qselect" data-act="f-status" aria-label="核验状态">' +
+            '<option value="all"' + (state.status === 'all' ? ' selected' : '') + '>状态：全部</option>' +
+            '<option value="accepted"' + (state.status === 'accepted' ? ' selected' : '') + '>状态：已核验</option>' +
+            '<option value="pending"' + (state.status === 'pending' ? ' selected' : '') + '>状态：待核验</option>' +
+            '<option value="demo"' + (state.status === 'demo' ? ' selected' : '') + '>仅别名命中</option>' +
+          '</select>' +
+          '<button class="btn btn-sm btn-quiet" type="button" data-act="search-reset">重置</button>' +
+        '</div>' +
+      '</div>';
+
+    var rows = res.length ? res.map(function (x) {
+      var r = x.rec, d = docOf(r.doc), cur = r.id === state.selected;
+      return '<li><button type="button" class="result" data-act="select" data-id="' + r.id + '"' +
+        (cur ? ' aria-current="true"' : '') + '>' +
+        '<span class="r-title">' + esc(d.title) + '</span>' +
+        '<span class="row-sub">' + esc(r.section) + '</span>' +
+        '<span class="r-snip">' + snippet(r, x.literal ? q : '', 108) + '</span>' +
+        '<span class="r-meta">' +
+          '<span class="tag tag-gray">' + esc(d.kindLabel) + '</span>' +
+          '<span class="num">文件第 ' + r.filePage + ' 页 · 印刷页 ' + r.printed + '</span>' +
+          (x.demo ? '<span class="tag tag-yellow">别名命中（演示）</span>' : '') +
+          verChip(verOf(r)) + '</span>' +
+        '</button></li>';
+    }).join('') : '';
+
+    var resultsPane =
+      '<div class="results">' +
+        '<div class="res-head">检索结果 · 演示数据</div>' +
+        (rows
+          ? '<ul class="res-list" aria-label="检索结果列表">' + rows + '</ul>'
+          : '<div class="empty"><strong>没有匹配的页面</strong>' +
+            '演示数据中没有包含「' + esc(q || '（空）') + '」的页面。<br>换个检索词，或放宽来源与状态筛选。' +
+            '<div style="margin-top:12px"><button class="btn btn-sm" type="button" data-act="search-reset">重置检索条件</button></div></div>') +
+        '<div class="res-foot">文件页 = 文件内第几页；印刷页 = 书页上印的页码，二者分开记录。</div>' +
+      '</div>';
+
+    var readerPane = '<div class="reader">' + (sel ? renderReader(sel) : renderReaderEmpty(res.length)) + '</div>';
+
+    return head + '<div class="split" data-pane="' + state.pane + '">' + resultsPane + readerPane + '</div>';
+  }
+
+  function renderReaderEmpty(hasResults) {
+    return '<div class="doc-head"><div><h2 class="doc-title">未选择页面</h2>' +
+      '<p class="doc-sub">' + (hasResults ? '在结果列表中选择一页，即可查看原页、识别文本与对照。' : '先调整检索条件以获得结果。') +
+      '</p></div></div>';
+  }
+
+  function renderReader(r) {
+    var d = docOf(r.doc), v = verOf(r);
+    var zoomCls = state.zoom === 'actual' ? ' scan-actual' : '';
+    var tabs = [
+      { id: 'scan', label: '原页扫描' },
+      { id: 'ocr', label: 'OCR 文本' },
+      { id: 'cmp', label: '对照' }
+    ].map(function (t) {
+      return '<button type="button" role="tab" class="dtab" id="tab-' + t.id + '" data-act="tab" data-tab="' + t.id + '"' +
+        ' aria-controls="panel-' + t.id + '" aria-selected="' + (state.tab === t.id ? 'true' : 'false') + '" tabindex="' +
+        (state.tab === t.id ? '0' : '-1') + '">' + t.label + '</button>';
+    }).join('');
+
+    var panel = state.tab === 'scan' ? panelScan(r, d, zoomCls)
+      : state.tab === 'ocr' ? panelOcr(r, d)
+      : panelCmp(r, d, zoomCls);
+
+    return '' +
+      '<div class="doc-head">' +
+        '<button class="btn btn-sm only-sm" type="button" data-act="back">← 结果</button>' +
+        '<div style="min-width:0;flex:1 1 auto">' +
+          '<h2 class="doc-title">' + esc(d.title) + '</h2>' +
+          '<p class="doc-sub">' + esc(r.section) + '</p>' +
+        '</div>' +
+        '<div class="doc-acts">' +
+          '<button class="btn btn-sm" type="button" data-act="toggle-ver">' + (v === 'accepted' ? '撤销已核验' : '标记已核验') + '</button>' +
+          '<button class="btn btn-sm btn-primary" type="button" data-act="save-ex">保存摘录</button>' +
+        '</div>' +
+      '</div>' +
+      '<details class="source-properties"><summary>文件第 ' + r.filePage + ' 页 · 印刷页 ' + r.printed +
+        ' <span class="tag tag-yellow">示例文字 · 不可作为史料引用</span></summary><div class="props">' +
+        propRow('来源', esc(d.title)) +
+        propRow('版式', esc(d.kindLabel)) +
+        propRow('文件页', '<span class="num">' + r.filePage + '</span>') +
+        propRow('印刷页', '<span class="num">' + r.printed + '</span>') +
+        propRow('状态', verChip(v)) +
+        propRow('文本', '<span class="tag tag-yellow">示例文字 · 不可作为史料引用</span>') +
+      '</div></details>' +
+      '<div class="doc-tabs" role="tablist" aria-label="阅读方式">' + tabs + '</div>' +
+      panel +
+      '<div class="srcbar">' +
+        '<div class="src-info"><span>来源页：文件第 <span class="num">' + r.filePage + '</span> 页 · 印刷页 <span class="num">' +
+          r.printed + '</span></span>' + verChip(v) +
+          '<span>' + (v === 'accepted' ? '已对照原页核验' : '未核验，摘录仅供个人参考') + '</span></div>' +
+      '</div>';
+  }
+
+  function scanFigure(r, d, zoomCls) {
+    if (!r.image) {
+      return '<div class="scan-ph"><b>该页没有真实页面图</b>' +
+        '本条为演示记录，未提供扫描图。可切换到「OCR 文本」查看示例识别文本。</div>';
+    }
+    return '<div class="scan-scroll' + (zoomCls || '') + '">' +
+      '<img class="scan-img" src="' + r.image + '" alt="' + esc(d.title) + '，印刷页 ' + r.printed +
+      ' 的页面渲染" decoding="async"></div>';
+  }
+
+  function panelScan(r, d, zoomCls) {
+    return '<div class="panel" role="tabpanel" id="panel-scan" aria-labelledby="tab-scan" tabindex="0">' +
+      '<div class="scan-bar"><span>' + esc(r.imageNote || '本页无图像资产（演示记录）') + '</span>' +
+        (r.image ? '<span class="seg" role="group" aria-label="显示比例">' +
+          '<button type="button" data-act="zoom" data-zoom="fit" aria-pressed="' + (state.zoom === 'fit') + '">适应宽度</button>' +
+          '<button type="button" data-act="zoom" data-zoom="actual" aria-pressed="' + (state.zoom === 'actual') + '">原始大小</button>' +
+        '</span>' : '') +
+      '</div>' +
+      scanFigure(r, d, zoomCls) +
+      '<p class="scan-note">未获得识别框坐标，因此扫描区不绘制文字框与高亮；定位依据只有「文件页 + 印刷页」，请对照识别文本人工确认。</p>' +
+      '</div>';
+  }
+
+  function ocrBody(r, d) {
+    var q = state.query.trim();
+    var lit = isLiteralHit(r, q);
+    var head = '<div class="read-meta">' +
+        '<span class="tag tag-yellow">示例文字 · 不可作为史料引用</span>' +
+        '<span class="tag tag-gray">' + esc(r.engine) + '</span>' +
+        (r.conf !== '—' ? '<span class="tag tag-gray">示例置信度 <span class="num">' + r.conf + '</span></span>' : '') +
+        verChip(verOf(r)) +
+      '</div>';
+    var body = lines(r).map(function (l) {
+      if (/^\d+\s/.test(l) || /^第[一二三四五六七八九十]+[篇卷]/.test(l)) {
+        return '<p class="read-raw">' + mark(l, lit ? q : '') + '</p>';
+      }
+      if (isHeading(l)) return '<h3 class="read-h">' + mark(l, lit ? q : '') + '</h3>';
+      return '<p class="read-p">' + mark(l, lit ? q : '') + '</p>';
+    }).join('');
+    var tail = '<p class="fine-print">本页文本为演示节选，用于说明阅读与摘录流程；正式版会在此处显示识别全文、分栏还原结果与校订历史。</p>';
+    return '<div class="read-wrap">' + head + body + tail + '</div>';
+  }
+
+  function panelOcr(r, d) {
+    return '<div class="panel" role="tabpanel" id="panel-ocr" aria-labelledby="tab-ocr" tabindex="0">' + ocrBody(r, d) + '</div>';
+  }
+
+  function correctionBlock(r) {
+    var saved = state.corrections[r.id];
+    var pts = r.correction || [];
+    return '<div class="note-box">' +
+      '<h4>校订备注（演示示例）</h4>' +
+      '<ul class="note-list">' + pts.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul>' +
+      (saved ? '<p class="help">本次演示已保存的备注：' + esc(saved) + '</p>' : '') +
+      '<label class="lbl" for="corr">补充一条备注（仅保存在本次演示会话）</label>' +
+      '<textarea id="corr" data-act="corr-input" placeholder="例如：原页「花并」为笔误，实为「花井」">' + esc(saved || '') + '</textarea>' +
+      '<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">' +
+        '<button class="btn btn-sm" type="button" data-act="save-corr">保存备注</button>' +
+        '<span class="help" style="margin:0">保存后，该页已有摘录会标记为「已变更」。</span>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function panelCmp(r, d, zoomCls) {
+    return '<div class="panel" role="tabpanel" id="panel-cmp" aria-labelledby="tab-cmp" tabindex="0">' +
+      '<div class="cmp">' +
+        '<div class="cmp-col">' +
+          '<div class="cmp-head"><span>原页扫描</span>' +
+            (r.image ? '<span class="tag tag-gray">' + esc(String(r.imageNote).split('·').pop().trim()) + '</span>'
+                     : '<span class="tag tag-gray">无图像资产</span>') + '</div>' +
+          '<div class="cmp-scroll">' + scanFigure(r, d, zoomCls) + '</div>' +
+        '</div>' +
+        '<div class="cmp-col">' +
+          '<div class="cmp-head"><span>可读文本</span>' + verChip(verOf(r)) + '</div>' +
+          '<div class="cmp-text">' + ocrBody(r, d) + '</div>' +
+          correctionBlock(r) +
+        '</div>' +
+      '</div>' +
+      '</div>';
+  }
+
+  /* ==========================================================
+     5. 其他视图
+     ========================================================== */
+  function viewLibrary() {
+    var total = 0;
+    var rows = state.files.map(function (f) {
+      if (typeof f.pages === 'number') total += f.pages;
+      var kindLabel = f.kind === 'scan' ? '扫描件' : '文本层';
+      var st = f.demo ? '演示待导入' : f.status;
+      var cls = f.demo ? 'tag tag-gray' : (f.kind === 'text' ? 'tag tag-blue' : 'tag tag-yellow');
+      return '<tr>' +
+        '<td><div>' + esc(f.name) + '</div></td>' +
+        '<td><span class="tag tag-gray">' + kindLabel + '</span></td>' +
+        '<td class="n">' + (f.pages === '—' ? '—' : f.pages) + '</td>' +
+        '<td class="n">' + (f.done === '—' ? '—' : f.done) + '</td>' +
+        '<td><span class="' + cls + '">' + st + '</span></td>' +
+        '<td class="n">' + esc(f.at) + '</td>' +
+        '<td>' + (f.doc
+          ? '<button class="btn btn-sm btn-quiet" type="button" data-act="lib-open" data-doc="' + f.doc + '">在检索中查看</button>'
+          : '<span class="s-hint">未建立检索条目</span>') + '</td>' +
+      '</tr>';
+    }).join('');
+    return '<div class="page">' +
+      pageHead('library') +
+      '<div class="page-body">' +
+        '<div class="db-toolbar"><span class="db-name">文件</span>' +
+          '<span class="db-count num">' + state.files.length + ' 项 · 示例合计 ' + total + ' 页</span>' +
+          '<div class="db-right"><button class="btn btn-sm btn-primary" type="button" data-act="import-open">导入文件</button></div>' +
+        '</div>' +
+        '<div class="tbl-wrap"><table class="tbl">' +
+          '<thead><tr><th>文件</th><th>版式</th><th class="n">页数</th><th class="n">已识别页</th><th>状态</th><th class="n">最近操作</th><th></th></tr></thead>' +
+          '<tbody>' + rows + '</tbody></table></div>' +
+        '<p class="fine-print"><b>导入</b>只读取所选文件的名称与大小，不读取内容、不上传、不联网。<br>' +
+        '<b>文件页与印刷页</b>分开保存：文件页是从 1 开始的文件内页序，印刷页是书上印的页码（例如「文件第 7 页 / 印刷页 775」）。<br>' +
+        '<b>验收目标</b>：合计 1000 页（待测），分布在 3–5 个文件；本表为演示数据，不等于验收规模。</p>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function jobState(j) {
+    if (j.pend === 0 && j.fail === 0) return { label: '已完成', cls: 'tag tag-blue' };
+    if (j.paused) return { label: '已暂停', cls: 'tag tag-gray' };
+    if (j.fail > 0) return { label: '部分失败', cls: 'tag tag-red' };
+    return { label: '进行中', cls: 'tag tag-blue' };
+  }
+  function viewJobs() {
+    var rows = state.jobs.map(function (j) {
+      var st = jobState(j);
+      var pct = function (v) { return j.total ? Math.round(v / j.total * 100) : 0; };
+      return '<div class="db-row">' +
+        '<div class="row-main">' +
+          '<div class="row-title">' + esc(j.file) + '</div>' +
+          '<div class="row-meta"><span class="' + st.cls + '">' + st.label + '</span>' +
+            '<span class="tag tag-gray">' + esc(j.mode) + '</span>' +
+            '<span class="tag tag-yellow">模拟任务</span></div>' +
+          '<div class="bar" role="img" aria-label="示例进度：已完成 ' + j.done + ' 页，共 ' + j.total + ' 页">' +
+            '<i style="width:' + pct(j.done) + '%"></i>' +
+            '<i class="b-pend" style="width:' + pct(j.pend) + '%"></i>' +
+            '<i class="b-fail" style="width:' + pct(j.fail) + '%"></i></div>' +
+          '<div class="job-line"><span class="num">共 ' + j.total + ' 页</span>' +
+            '<span>已完成 <span class="num">' + j.done + '</span></span>' +
+            '<span>待处理 <span class="num">' + j.pend + '</span></span>' +
+            '<span>失败 <span class="num">' + j.fail + '</span></span>' +
+            '<span class="s-hint">数值为示例，不会自动推进</span></div>' +
+        '</div>' +
+        '<div class="row-acts">' +
+          '<button class="btn btn-sm" type="button" data-act="job-toggle" data-id="' + j.id + '"' +
+            (j.done >= j.total ? ' disabled' : '') + '>' + (j.paused ? '继续' : '暂停') + '</button>' +
+          '<button class="btn btn-sm" type="button" data-act="job-retry" data-id="' + j.id + '"' +
+            (j.fail === 0 ? ' disabled' : '') + '>重试失败页</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    return '<div class="page">' +
+      pageHead('jobs') +
+      '<div class="page-body">' +
+        '<div class="db-toolbar"><span class="db-name">任务</span>' +
+          '<span class="db-count num">' + state.jobs.length + ' 项</span></div>' +
+        '<div class="db-list">' + rows + '</div>' +
+        '<p class="fine-print">暂停、继续与重试只改变本页显示，不会启动任何识别进程，也没有计时器在推进。</p>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function viewExcerpts() {
+    var list = state.excerpts.filter(function (x) {
+      var r = recOf(x.rec);
+      if (!r) return false;
+      if (state.exStatus !== 'all' && x.ver !== state.exStatus) return false;
+      if (state.exDoc !== 'all' && r.doc !== state.exDoc) return false;
+      return true;
+    });
+    var counts = { all: state.excerpts.length, accepted: 0, pending: 0, stale: 0 };
+    state.excerpts.forEach(function (x) { if (counts[x.ver] !== undefined) counts[x.ver] += 1; });
+
+    var rows = list.length ? list.map(function (x) {
+      var r = recOf(x.rec), d = docOf(r.doc);
+      return '<div class="db-row">' +
+        '<div class="row-main">' +
+          '<div class="row-title">' + esc(x.quote) + '</div>' +
+          '<div class="row-meta">' + verChip(x.ver) +
+            '<span class="tag tag-gray">' + esc(x.cat) + '</span>' +
+            '<span>' + esc(d.title) + '</span>' +
+            '<span class="num">文件第 ' + r.filePage + ' 页 / 印刷页 ' + r.printed + '</span>' +
+            '<span class="num">' + esc(x.at) + '</span>' +
+            (x.note ? '<span>' + esc(x.note) + '</span>' : '') + '</div>' +
+        '</div>' +
+        '<div class="row-acts">' +
+          '<button class="btn btn-sm" type="button" data-act="ex-review" data-id="' + x.id + '">' +
+            (x.ver === 'accepted' ? '撤销核验' : '标记已核验') + '</button>' +
+          '<button class="btn btn-sm" type="button" data-act="ex-src" data-id="' + x.id + '">返回来源</button>' +
+          '<button class="btn btn-sm btn-quiet" type="button" data-act="ex-del" data-id="' + x.id + '">删除</button>' +
+        '</div>' +
+      '</div>';
+    }).join('') : '<div class="empty"><strong>没有符合条件的摘录</strong>切换状态或来源再试。</div>';
+
+    return '<div class="page">' +
+      pageHead('excerpts') +
+      '<div class="page-body">' +
+        '<div class="db-toolbar"><span class="db-name">摘录</span>' +
+          '<span class="db-count num">' + list.length + ' / ' + state.excerpts.length + ' 条</span>' +
+          '<div class="db-right">' +
+            '<select class="qselect" data-act="x-status" aria-label="按核验状态筛选">' +
+              '<option value="all"' + (state.exStatus === 'all' ? ' selected' : '') + '>状态：全部（' + counts.all + '）</option>' +
+              '<option value="accepted"' + (state.exStatus === 'accepted' ? ' selected' : '') + '>已核验（' + counts.accepted + '）</option>' +
+              '<option value="pending"' + (state.exStatus === 'pending' ? ' selected' : '') + '>待核验（' + counts.pending + '）</option>' +
+              '<option value="stale"' + (state.exStatus === 'stale' ? ' selected' : '') + '>已变更（' + counts.stale + '）</option>' +
+            '</select>' +
+            '<select class="qselect" data-act="x-doc" aria-label="按来源筛选">' +
+              '<option value="all"' + (state.exDoc === 'all' ? ' selected' : '') + '>来源：全部</option>' +
+              Object.keys(DOCS).map(function (k) {
+                return '<option value="' + k + '"' + (state.exDoc === k ? ' selected' : '') + '>' + esc(DOCS[k].title) + '</option>';
+              }).join('') +
+            '</select>' +
+          '</div>' +
+        '</div>' +
+        '<div class="db-list">' + rows + '</div>' +
+        '<p class="fine-print">摘录保存的是原文的精确切片，并记录来源的文件页与印刷页。<b>已变更</b>表示原文被校订过，需要重新核对；删除会先要求确认，删除后仍可撤销。</p>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function viewProjects() {
+    var rows = PROJECTS.map(function (p) {
+      var open = state.projOpen === p.id;
+      var related = state.excerpts.filter(function (x) {
+        var r = recOf(x.rec);
+        if (!r) return false;
+        return p.id === 'p1' ? (r.doc === 'doc-ankang' || r.doc === 'doc-xiangfan')
+          : p.id === 'p2' ? r.doc === 'doc-hanzhong' : r.doc === 'doc-xiangfan';
+      }).length;
+      return '<div class="db-row">' +
+        '<div class="row-main">' +
+          '<div class="row-title">' + esc(p.name) + '</div>' +
+          '<div class="row-sub">' + esc(p.q) + '</div>' +
+          '<div class="row-meta"><span class="tag tag-gray">' + esc(p.state) + '</span>' +
+            '<span class="tag tag-yellow">演示项目</span>' +
+            '<span class="num">关联摘录 ' + related + ' 条</span>' +
+            '<span>计划：' + p.plan.map(esc).join(' · ') + '</span></div>' +
+          (open ? '<p class="fine-print">正式版中「检索 → 保存摘录 → 标记已核验 → 汇总」会串成一条流程；本草图只保留检索与摘录两步。</p>' : '') +
+        '</div>' +
+        '<div class="row-acts">' +
+          '<button class="btn btn-sm" type="button" data-act="proj-search" data-kw="' + esc(p.keyword) + '">在检索中打开</button>' +
+          '<button class="btn btn-sm btn-quiet" type="button" data-act="proj-open" data-id="' + p.id + '" aria-expanded="' + open + '">' +
+            (open ? '收起' : '展开') + '</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    return '<div class="page">' +
+      pageHead('projects') +
+      '<div class="page-body">' +
+        '<div class="db-toolbar"><span class="db-name">项目</span>' +
+          '<span class="db-count num">' + PROJECTS.length + ' 项</span></div>' +
+        '<div class="db-list">' + rows + '</div>' +
+        '<p class="fine-print">项目、问题与计划动作均为示例内容，没有真实的目标文献集，也不会自动生成报告或调用模型。</p>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function viewSettings() {
+    var s = state.settings;
+    function row(label, desc, ctl) {
+      return '<div class="set-row"><div class="set-label">' + label +
+        (desc ? '<div class="set-desc">' + desc + '</div>' : '') + '</div>' +
+        '<div class="set-ctl">' + ctl + '</div></div>';
+    }
+    return '<div class="page">' +
+      pageHead('settings') +
+      '<div class="page-body">' +
+        '<div class="set-block">' +
+          '<h2 class="set-h">模型服务</h2>' +
+          '<p class="set-sub">面向普通用户，模型配置在本页完成，无需编辑环境变量。以下为草图表单，不会发出任何请求。</p>' +
+          row('模型服务地址', '正式版默认使用本机服务；本页不校验可达性。',
+            '<input id="s-url" type="url" style="width:100%" value="' + esc(s.baseUrl) + '" placeholder="http://localhost:11434/v1">') +
+          row('模型名称', '用于本机推理的模型标识。',
+            '<input id="s-model" type="text" style="width:100%" value="' + esc(s.model) + '" placeholder="qwen2.5:7b">') +
+          row('API 密钥（草图不接收真实密钥）', '正式版可仅在本次运行使用；密钥不写入文献库。草图中此框为禁用状态，不接受输入，也不做任何存储。',
+            '<input id="s-key" type="password" style="width:100%" value="" placeholder="已禁用" disabled aria-describedby="key-help">') +
+          '<div class="set-row"><div class="set-label"></div><div class="set-ctl">' +
+            '<button class="btn btn-sm btn-primary" type="button" data-act="set-save">保存到本次演示会话</button>' +
+            '<button class="btn btn-sm" type="button" data-act="set-reset">恢复默认</button>' +
+            '<span class="help">保存只更新本页显示，不会写入文件或系统。</span>' +
+          '</div></div>' +
+        '</div>' +
+        '<div class="set-block">' +
+          '<h2 class="set-h">其他</h2>' +
+          '<p class="set-sub">仅供讨论；环境变量方式只是命令行场景的说明，普通用户无需接触。</p>' +
+          row('服务地址环境变量名', '',
+            '<input id="s-env-base" type="text" style="width:100%" value="' + esc(s.envBase) + '">') +
+          row('模型名称环境变量名', '',
+            '<input id="s-env-model" type="text" style="width:100%" value="' + esc(s.envModel) + '">') +
+          row('界面密度', '立即生效，便于比较信息密度。',
+            '<select id="s-density" style="width:100%">' +
+              '<option value="normal"' + (s.density === 'normal' ? ' selected' : '') + '>标准</option>' +
+              '<option value="compact"' + (s.density === 'compact' ? ' selected' : '') + '>紧凑</option>' +
+            '</select>') +
+          '<div class="set-row"><div class="set-label">演示工作区</div>' +
+            '<div class="set-ctl"><span>~/我的文献（示例路径，本页不读写）<br>' +
+            '数据留在本机；本草图内容全部在页面内存中，刷新即恢复初始演示状态。</span></div></div>' +
+          '<div class="set-row"><div class="set-label"></div><div class="set-ctl">' +
+            '<button class="btn btn-sm" type="button" data-act="session-reset">恢复演示初始状态</button>' +
+          '</div></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  /* ==========================================================
+     6. 研究助手抽屉（AI 模拟）
+     ========================================================== */
+  function simulatedAnswer(q) {
+    q = String(q || '').trim();
+    if (!q) return null;
+    if (q.indexOf('庙') >= 0) {
+      return {
+        lead: '模拟生成 · 未调用任何模型服务',
+        points: [
+          { t: '安康县志 文件第 7 页（印刷 775）设有「二、文庙」专条：元代建筑，现存大成殿一座，主厅阔 4.66 米。', rec: 'u-ak-7' },
+          { t: '汉中地区文化文物志 文件第 4 页（印刷 738）未出现「文庙」字样，别名扩展把它作为「诸葛庙（武侯祠）」的演示相关项返回。', rec: 'u-hz-4' },
+          { t: '随州、襄樊两处文庙条目的示例置信度较低，建议先保存摘录，再对照扫描页核验。', rec: 'u-sz-9' }
+        ],
+        adv: '演示建议的下一步：保存摘录 → 对照原页 → 标记已核验。'
+      };
+    }
+    return {
+      lead: '模拟生成 · 未调用任何模型服务',
+      points: [],
+      adv: '演示数据只预置了与「文庙」相关的一组示例问答。可以输入包含「庙」的问题查看示例。'
+    };
+  }
+
+  function evLink(recId) {
+    var r = recOf(recId);
+    if (!r) return '';
+    var d = docOf(r.doc);
+    return '<button class="ev" type="button" data-act="goto" data-id="' + recId + '">' +
+      esc(d.title) + ' · 文件第 ' + r.filePage + ' 页 / 印刷页 ' + r.printed + '</button>';
+  }
+
+  function renderDrawer() {
+    var q = state.query.trim();
+    var lit = countLiteral(), exp = countDemoExpansion();
+    var c = { accepted: 0, pending: 0, stale: 0 };
+    state.excerpts.forEach(function (x) { c[x.ver] += 1; });
+    var paused = state.jobs.filter(function (j) { return j.paused; }).length;
+    var a = state.ask.a;
+    return '<div class="dr-head"><div style="min-width:0"><h2>研究助手</h2>' +
+      '<p class="dr-note">AI 模拟 · 未调用任何模型服务</p></div>' +
+      '<button class="icon-btn" type="button" data-act="drawer-close" aria-label="关闭研究助手">✕</button></div>' +
+      '<div class="dr-body">' +
+        '<section><h3>本次演示动作</h3><ul class="dr-list">' +
+          '<li>检索「<b>' + esc(q || '（空）') + '</b>」：字面命中 <span class="num">' + lit + '</span> 条' +
+            (state.mode === 'expanded' ? '；别名命中 <span class="num">' + exp + '</span> 条（演示）' : '') + '</li>' +
+          '<li>摘录 <span class="num">' + state.excerpts.length + '</span> 条：已核验 <span class="num">' + c.accepted +
+            '</span> · 待核验 <span class="num">' + c.pending + '</span> · 已变更 <span class="num">' + c.stale + '</span></li>' +
+          '<li>识别任务 <span class="num">' + state.jobs.length + '</span> 个（已暂停 <span class="num">' + paused + '</span> 个，数值为演示）</li>' +
+        '</ul></section>' +
+        '<section><h3>证据</h3><ul class="dr-list">' +
+          (state.selected && recOf(state.selected)
+            ? '<li>正在阅读：' + evLink(state.selected) + '</li>'
+            : '<li>尚未选择页面。</li>') +
+          (state.excerpts.length
+            ? '<li>最近保存的摘录来源：' + evLink(state.excerpts[state.excerpts.length - 1].rec) + '</li>'
+            : '<li>尚未保存摘录。</li>') +
+        '</ul></section>' +
+        '<section><h3>试问（演示）</h3>' +
+          '<label class="lbl" for="ask">例如：文庙的记录在两部志书里有什么不同？</label>' +
+          '<textarea id="ask" placeholder="输入问题">' + esc(state.ask.q) + '</textarea>' +
+          '<div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">' +
+            '<button class="btn btn-sm btn-primary" type="button" data-act="ask-run">生成模拟回答</button>' +
+            '<span class="help" style="margin:0">回答为预置文本，不会真正检索或生成。</span></div>' +
+          (a ? '<div class="ans" style="margin-top:10px">' +
+            '<p class="lead">' + esc(a.lead) + '</p>' +
+            (a.points.length
+              ? '<ol>' + a.points.map(function (p) {
+                  return '<li>' + esc(p.t) + '<br>' + evLink(p.rec) + '</li>';
+                }).join('') + '</ol>'
+              : '<p style="margin:6px 0 0">未找到对应的演示回答。</p>') +
+            '<p class="adv">' + esc(a.adv) + '</p></div>' : '') +
+        '</section>' +
+      '</div>';
+  }
+  /* ==========================================================
+     7. 渲染
+     ========================================================== */
+  function render() {
+    document.body.classList.toggle('dense', state.settings.density === 'compact');
+    document.body.classList.toggle('nav-open', !!state.navOpen);
+    $('#nav-scrim').hidden = !state.navOpen;
+    var menu = document.querySelector('[data-act="menu"]');
+    menu.setAttribute('aria-expanded', String(!!state.navOpen));
+    var meta = VIEW_META[state.view];
+    $('#crumb-cur').textContent = meta.title;
+    renderNav();
+
+    var main = $('#main');
+    main.className = 'workspace ' + (state.view === 'search' ? 'view-search' : 'view-scroll');
+    if (state.view === 'search') main.innerHTML = renderSearch();
+    else if (state.view === 'library') main.innerHTML = viewLibrary();
+    else if (state.view === 'jobs') main.innerHTML = viewJobs();
+    else if (state.view === 'excerpts') main.innerHTML = viewExcerpts();
+    else if (state.view === 'projects') main.innerHTML = viewProjects();
+    else main.innerHTML = viewSettings();
+
+    var drawer = $('#drawer'), scrim = $('#scrim');
+    if (state.drawer) {
+      drawer.innerHTML = renderDrawer();
+      drawer.hidden = false;
+      scrim.hidden = false;
+    } else {
+      drawer.hidden = true;
+      scrim.hidden = true;
+      drawer.innerHTML = '';
+    }
+  }
+
+  function rerenderPreservingScroll() {
+    var list = document.querySelector('.res-list');
+    var top = list ? list.scrollTop : 0;
+    render();
+    var l2 = document.querySelector('.res-list');
+    if (l2 && top) l2.scrollTop = top;
+  }
+
+  /* ==========================================================
+     8. 提示条
+     ========================================================== */
+  var lastDeleted = null;
+  function toast(msg, undoLabel) {
+    var t = $('#toast');
+    $('#toast-msg').textContent = msg;
+    var acts = '';
+    if (undoLabel) acts += '<button class="t-btn" type="button" data-act="toast-undo">' + esc(undoLabel) + '</button>';
+    $('#toast-acts').innerHTML = acts;
+    t.hidden = false;
+  }
+  function hideToast() { $('#toast').hidden = true; $('#toast-msg').textContent = ''; $('#toast-acts').innerHTML = ''; }
+
+  /* ==========================================================
+     9. 对话框
+     ========================================================== */
+  var modal = $('#modal');
+  function openModal(opts) {
+    $('#modal-title').textContent = opts.title;
+    $('#modal-note').textContent = opts.note || '';
+    $('#modal-body').innerHTML = opts.body || '';
+    if (!modal.open) modal.showModal();
+    var f = $('#modal-body').querySelector('input,select,textarea,button');
+    if (f) { try { f.focus(); } catch (e) { /* 忽略聚焦异常 */ } }
+  }
+  function closeModal() { if (modal.open) modal.close(); }
+
+  function dialogExcerpt(rec) {
+    var d = docOf(rec.doc);
+    var quote = defaultQuote(rec);
+    openModal({
+      title: '保存摘录',
+      note: d.title + ' · 文件第 ' + rec.filePage + ' 页 / 印刷页 ' + rec.printed + '（演示操作，不写入文献库）',
+      body:
+        '<div class="field"><label class="lbl" for="ex-quote">原句（取自本页示例文本的精确切片）</label>' +
+          '<div class="quote-box" id="ex-quote">' + esc(quote) + '</div></div>' +
+        '<div class="field"><label class="lbl" for="ex-cat">分类</label>' +
+          '<select id="ex-cat" style="width:100%">' + CAT.map(function (c) {
+            return '<option' + (c === '文物建筑' ? ' selected' : '') + '>' + esc(c) + '</option>';
+          }).join('') + '</select></div>' +
+        '<div class="field"><label class="lbl" for="ex-note">备注（可选）</label>' +
+          '<input id="ex-note" type="text" style="width:100%" placeholder="例如：待核对原页"></div>' +
+        '<div class="modal-foot">' +
+          '<button class="btn" type="button" data-act="modal-close">取消</button>' +
+          '<button class="btn btn-primary" type="button" data-act="ex-confirm" data-id="' + rec.id + '">保存摘录</button>' +
+        '</div>'
+    });
+  }
+
+  function dialogDelete(id) {
+    var x = null;
+    for (var i = 0; i < state.excerpts.length; i++) { if (state.excerpts[i].id === id) x = state.excerpts[i]; }
+    if (!x) return;
+    openModal({
+      title: '删除这条摘录？',
+      note: '删除前会保留一份临时副本，可在提示条中撤销。',
+      body: '<div class="quote-box">「' + esc(x.quote) + '」</div>' +
+        '<div class="modal-foot">' +
+          '<button class="btn" type="button" data-act="modal-close">取消</button>' +
+          '<button class="btn btn-danger" type="button" data-act="del-confirm" data-id="' + id + '">删除</button>' +
+        '</div>'
+    });
+  }
+
+  var pendingFile = null;
+  function importBody() {
+    var chosen = pendingFile
+      ? '<p>已选择：<span class="fname">' + esc(pendingFile.name) + '</span>' +
+        (pendingFile.size ? ' · <span class="num">' + fileSize(pendingFile.size) + '</span>' : '') + '</p>' +
+        '<p class="help" style="margin:4px 0 0">仅读取了名称与大小；未读取内容、未上传、未联网。</p>'
+      : '<p>尚未选择文件。</p><p class="help" style="margin:4px 0 0">可使用下面的示例文件以免打开系统选择框。</p>';
+    return '<div class="file-pick">' + chosen +
+        '<p style="margin:8px 0 0"><button class="btn btn-sm" type="button" data-act="import-pick">选择文件…</button> ' +
+        '<button class="btn btn-sm" type="button" data-act="import-sample">使用示例文件（不打开选择框）</button></p>' +
+        '<input type="file" id="import-file" hidden>' +
+      '</div>' +
+      '<fieldset style="margin-top:12px"><legend>识别方式</legend>' +
+        '<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:13px">' +
+          '<label><input type="radio" name="imode" value="auto" checked> 自动（按页判断）</label>' +
+          '<label><input type="radio" name="imode" value="text"> 仅文本层</label>' +
+          '<label><input type="radio" name="imode" value="force"> 强制 OCR</label>' +
+        '</div></fieldset>' +
+      '<div class="modal-foot">' +
+        '<button class="btn" type="button" data-act="modal-close">取消</button>' +
+        '<button class="btn btn-primary" type="button" data-act="import-confirm"' + (pendingFile ? '' : ' disabled') + '>导入到演示库</button>' +
+      '</div>';
+  }
+  function dialogImport() {
+    openModal({
+      title: '导入文件（演示）',
+      note: '此对话框不会读取文件内容，也不会上传或联网。',
+      body: importBody()
+    });
+  }
+  function refreshImport() { $('#modal-body').innerHTML = importBody(); }
+
+  function dialogAbout() {
+    openModal({
+      title: '关于本草图',
+      note: '本页是设计讨论用草图，不是可用系统。',
+      body:
+        '<dl class="kv-l">' +
+          '<dt>数据</dt><dd>所有文件、页码、识别文本与摘录均为演示数据，仅两页真实页面图来自随附资产（assets/ankang-775.png、assets/hanzhong-738.png）。</dd>' +
+          '<dt>检索</dt><dd>字面匹配是示例文本上的真实查找；别名扩展是预置的演示扩展，未做向量检索，也未连接模型。</dd>' +
+          '<dt>识别</dt><dd>识别任务页只显示模拟进度，暂停 / 继续 / 重试仅改变页面显示，不会启动任何识别进程。</dd>' +
+          '<dt>AI</dt><dd>研究助手为模拟：回答是预置文本，所有结论都附来源链接，可点开核对。</dd>' +
+          '<dt>密钥</dt><dd>设置页不接收、不保存、不发送任何密钥；API 密钥输入框为禁用状态。</dd>' +
+          '<dt>高亮</dt><dd>没有识别框坐标，因此扫描页上不绘制文字框或高亮。</dd>' +
+        '</dl>' +
+        '<div class="modal-foot"><button class="btn btn-primary" type="button" data-act="modal-close">知道了</button></div>'
+    });
+  }
+
+  /* ==========================================================
+     10. 行为
+     ========================================================== */
+  function runSearch(mode, keepQuery) {
+    if (!keepQuery && $('#q')) state.query = $('#q').value.trim();
+    state.mode = mode;
+    state.pane = 'list';
+    var res = computeResults();
+    if (res.length) {
+      state.selected = res[0].rec.id;
+      state.tab = res[0].rec.image ? 'scan' : 'ocr';
+    }
+    rerenderPreservingScroll();
+  }
+
+  function gotoRecord(id) {
+    if (!recOf(id)) return;
+    state.view = 'search';
+    state.selected = id;
+    state.tab = 'scan';
+    state.pane = 'detail';
+    state.drawer = false;
+    hideToast();
+    render();
+  }
+
+  var lastModalRec = null;
+  document.addEventListener('click', function (ev) {
+    var t = ev.target.closest ? ev.target.closest('[data-act]') : null;
+    if (!t) return;
+    var act = t.getAttribute('data-act');
+    var id = t.getAttribute('data-id');
+
+    switch (act) {
+      case 'nav':
+        state.view = t.getAttribute('data-view');
+        state.navOpen = false;
+        state.drawer = false;
+        render();
+        $('#main').scrollTop = 0;
+        break;
+
+      case 'list-view':
+        state.listView = t.getAttribute('data-v');
+        rerenderPreservingScroll();
+        break;
+      case 'menu':
+        state.navOpen = !state.navOpen;
+        render();
+        break;
+      case 'nav-scrim':
+        state.navOpen = false;
+        render();
+        break;
+
+      case 'search-literal': runSearch('literal'); break;
+      case 'search-semantic':
+        runSearch('expanded');
+        toast('别名扩展为演示结果：仅对预置检索词有效，未调用模型。');
+        break;
+      case 'search-reset':
+        state.query = '文庙'; state.scope = 'all'; state.kind = 'all'; state.status = 'all'; state.listView = 'all';
+        runSearch('literal', true);
+        break;
+
+      case 'select':
+        state.selected = id;
+        state.tab = recOf(id) && recOf(id).image ? 'scan' : 'ocr';
+        state.pane = 'detail';
+        rerenderPreservingScroll();
+        break;
+
+      case 'back': state.pane = 'list'; rerenderPreservingScroll(); break;
+
+      case 'tab':
+        state.tab = t.getAttribute('data-tab');
+        rerenderPreservingScroll();
+        break;
+      case 'zoom':
+        state.zoom = t.getAttribute('data-zoom');
+        rerenderPreservingScroll();
+        break;
+
+      case 'toggle-ver': {
+        var r = recOf(state.selected);
+        if (!r) break;
+        state.unitVer[r.id] = verOf(r) === 'accepted' ? 'pending' : 'accepted';
+        rerenderPreservingScroll();
+        toast(state.unitVer[r.id] === 'accepted' ? '已标记为已核验（仅本次演示会话）。' : '已撤销核验标记。');
+        break;
+      }
+
+      case 'save-ex': {
+        var rec = recOf(state.selected);
+        if (rec) { lastModalRec = rec.id; dialogExcerpt(rec); }
+        break;
+      }
+      case 'ex-confirm': {
+        var rc = recOf(id);
+        var qEl = $('#ex-quote'), cEl = $('#ex-cat'), nEl = $('#ex-note');
+        var text = rc && qEl ? qEl.textContent.trim() : '';
+        if (!text) { toast('摘录为空，请先选择一段原文。'); break; }
+        state.excerpts.push({
+          id: nextId('ex'), rec: id, quote: text,
+          cat: cEl ? cEl.value : '待归类',
+          note: nEl ? nEl.value.trim() : '',
+          ver: 'pending', at: '2026-10-15 09:24'
+        });
+        closeModal();
+        toast('已保存到摘录集（演示）。可在「摘录集」中核验或删除。');
+        render();
+        break;
+      }
+
+      case 'save-corr': {
+        var rr = recOf(state.selected);
+        var ta = document.getElementById('corr');
+        if (!rr || !ta) break;
+        state.corrections[rr.id] = ta.value.trim();
+        var n = 0;
+        state.excerpts.forEach(function (x) { if (x.rec === rr.id && x.ver !== 'stale') { x.ver = 'stale'; n += 1; } });
+        render();
+        toast('备注已存在本次演示会话；' + (n ? n + ' 条相关摘录标记为「已变更」。' : '没有相关摘录需要复核。'));
+        break;
+      }
+
+      case 'ex-review': {
+        for (var i = 0; i < state.excerpts.length; i++) {
+          if (state.excerpts[i].id === id) {
+            state.excerpts[i].ver = state.excerpts[i].ver === 'accepted' ? 'pending' : 'accepted';
+          }
+        }
+        render();
+        break;
+      }
+      case 'ex-src': {
+        for (var k = 0; k < state.excerpts.length; k++) {
+          if (state.excerpts[k].id === id) { gotoRecord(state.excerpts[k].rec); break; }
+        }
+        break;
+      }
+      case 'ex-del': dialogDelete(id); break;
+      case 'del-confirm': {
+        var idx = -1;
+        for (var m = 0; m < state.excerpts.length; m++) { if (state.excerpts[m].id === id) idx = m; }
+        if (idx >= 0) { lastDeleted = state.excerpts.splice(idx, 1)[0]; }
+        closeModal();
+        render();
+        toast('已删除摘录。', '撤销');
+        break;
+      }
+      case 'toast-undo':
+        if (lastDeleted) { state.excerpts.push(lastDeleted); lastDeleted = null; hideToast(); render(); }
+        break;
+      case 'toast-close': hideToast(); break;
+
+      case 'drawer-open':
+        state.drawer = true; render();
+        var ta0 = $('#drawer').querySelector('textarea');
+        if (ta0) ta0.focus();
+        break;
+      case 'drawer-close': state.drawer = false; render(); break;
+      case 'scrim': state.drawer = false; render(); break;
+
+      case 'goto': gotoRecord(id); break;
+
+      case 'ask-run': {
+        var ai = document.getElementById('ask');
+        state.ask.q = ai ? ai.value : '';
+        state.ask.a = simulatedAnswer(state.ask.q);
+        if (!state.ask.a) { toast('请先输入一个问题。'); break; }
+        render();
+        var again = document.getElementById('ask');
+        if (again) again.focus();
+        break;
+      }
+
+      case 'about': dialogAbout(); break;
+      case 'modal-close': closeModal(); break;
+
+      case 'lib-open': {
+        state.view = 'search';
+        state.scope = t.getAttribute('data-doc');
+        state.mode = 'literal';
+        var r2 = computeResults();
+        if (r2.length) { state.selected = r2[0].rec.id; state.tab = r2[0].rec.image ? 'scan' : 'ocr'; }
+        state.pane = 'list';
+        render();
+        break;
+      }
+      case 'import-open': pendingFile = null; dialogImport(); break;
+      case 'import-pick': {
+        var fi = document.getElementById('import-file');
+        if (fi) fi.click();
+        break;
+      }
+      case 'import-sample':
+        pendingFile = { name: '示例_地方志摘录.pdf', size: 4823140 };
+        refreshImport();
+        break;
+      case 'import-confirm': {
+        if (!pendingFile) break;
+        var modeEl = document.querySelector('input[name="imode"]:checked');
+        var mode = modeEl ? modeEl.value : 'auto';
+        var kindLabel = mode === 'text' ? '文本层' : '扫描件';
+        state.files.unshift({
+          id: nextId('f'), name: pendingFile.name, doc: null,
+          kind: mode === 'text' ? 'text' : 'scan',
+          pages: '—', done: '—', status: '演示待导入',
+          at: '2026-10-15 09:26', demo: true
+        });
+        closeModal();
+        toast('已加入演示清单（' + kindLabel + '）。未读取内容、未上传、未联网。');
+        render();
+        pendingFile = null;
+        break;
+      }
+
+      case 'job-toggle': {
+        for (var a1 = 0; a1 < state.jobs.length; a1++) {
+          if (state.jobs[a1].id === id) state.jobs[a1].paused = !state.jobs[a1].paused;
+        }
+        render();
+        toast('已改变演示状态，未启动任何识别进程。');
+        break;
+      }
+      case 'job-retry': {
+        for (var a2 = 0; a2 < state.jobs.length; a2++) {
+          if (state.jobs[a2].id === id) {
+            var f = state.jobs[a2].fail;
+            if (!f) break;
+            state.jobs[a2].fail = 0;
+            state.jobs[a2].pend += f;
+            state.jobs[a2].paused = false;
+            toast('模拟重试：' + f + ' 页重新排队（未真正运行）。');
+          }
+        }
+        render();
+        break;
+      }
+
+      case 'proj-open': {
+        var pid = t.getAttribute('data-id');
+        state.projOpen = state.projOpen === pid ? null : pid;
+        render();
+        break;
+      }
+      case 'proj-search': {
+        state.navOpen = false;
+        state.view = 'search';
+        state.query = t.getAttribute('data-kw') || '';
+        state.mode = 'literal';
+        state.scope = 'all'; state.kind = 'all'; state.status = 'all';
+        state.listView = 'all'; state.navOpen = false;
+        var r3 = computeResults();
+        if (r3.length) { state.selected = r3[0].rec.id; state.tab = r3[0].rec.image ? 'scan' : 'ocr'; }
+        state.pane = 'list';
+        render();
+        break;
+      }
+
+      case 'set-save': {
+        var url = $('#s-url').value.trim();
+        var model = $('#s-model').value.trim();
+        var eb = $('#s-env-base').value.trim();
+        var em = $('#s-env-model').value.trim();
+        if (!/^https?:\/\/.+/.test(url)) {
+          toast('服务地址需以 http:// 或 https:// 开头（演示校验，不发送请求）。');
+          break;
+        }
+        if (!model) { toast('请填写模型名称。'); break; }
+        if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(eb) || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(em)) {
+          toast('环境变量名只能使用字母、数字与下划线，且不能以数字开头。');
+          break;
+        }
+        state.settings.baseUrl = url; state.settings.model = model;
+        state.settings.envBase = eb; state.settings.envModel = em;
+        render();
+        toast('已保存到本次演示会话（未写入文件，未发送请求）。');
+        break;
+      }
+      case 'set-reset':
+        state.settings.baseUrl = 'http://localhost:11434/v1';
+        state.settings.model = 'qwen2.5:7b';
+        state.settings.envBase = 'LIT_LLM_BASE_URL';
+        state.settings.envModel = 'LIT_LLM_MODEL';
+        render();
+        toast('已恢复默认设置（演示）。');
+        break;
+
+      case 'session-reset':
+        openModal({
+          title: '恢复演示初始状态？',
+          note: '会把摘录、识别任务、文献清单与设置恢复到打开页面时的样子。',
+          body: '<div class="modal-foot">' +
+            '<button class="btn" type="button" data-act="modal-close">取消</button>' +
+            '<button class="btn btn-danger" type="button" data-act="session-confirm">恢复</button></div>'
+        });
+        break;
+      case 'session-confirm': {
+        state.excerpts = SEED_EXCERPTS.slice();
+        state.files = SEED_FILES.slice();
+        state.jobs = SEED_JOBS.slice();
+        state.corrections = {}; state.unitVer = {};
+        state.settings.baseUrl = 'http://localhost:11434/v1';
+        state.settings.model = 'qwen2.5:7b';
+        state.settings.envBase = 'LIT_LLM_BASE_URL';
+        state.settings.envModel = 'LIT_LLM_MODEL';
+        state.settings.density = 'normal';
+        state.view = 'search'; state.query = '文庙'; state.mode = 'literal';
+        state.scope = 'all'; state.kind = 'all'; state.status = 'all';
+        state.selected = 'u-ak-7'; state.tab = 'scan'; state.pane = 'list';
+        state.listView = 'all'; state.navOpen = false;
+        state.ask = { q: '', a: null }; state.projOpen = null;
+        closeModal(); hideToast();
+        render();
+        toast('已恢复演示初始状态。');
+        break;
+      }
+      default: break;
+    }
+  });
+
+  /* 回车检索 / 筛选与设置项 */
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter' && ev.target && ev.target.id === 'q') { ev.preventDefault(); runSearch('literal'); }
+    if (ev.key === 'Enter' && ev.target && ev.target.id === 's-density') { ev.preventDefault(); }
+    if (ev.key === 'Enter' && ev.target && ev.target.id === 'ask') { ev.preventDefault(); t('ask-run'); }
+    /* Tab 键顺序：左右方向键切换阅读方式 */
+    if ((ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') && ev.target && ev.target.classList &&
+        ev.target.classList.contains('dtab')) {
+      ev.preventDefault();
+      var order = ['scan', 'ocr', 'cmp'];
+      var i = order.indexOf(state.tab);
+      var next = order[(i + (ev.key === 'ArrowRight' ? 1 : order.length - 1)) % order.length];
+      state.tab = next;
+      rerenderPreservingScroll();
+      var nb = document.getElementById('tab-' + next);
+      if (nb) nb.focus();
+    }
+    if (ev.key === 'Escape' && state.drawer) { state.drawer = false; render(); }
+  });
+
+  function t(act) {
+    var b = document.querySelector('[data-act="' + act + '"]');
+    if (b) b.click();
+  }
+
+  document.addEventListener('change', function (ev) {
+    var el = ev.target;
+    var act = el.getAttribute && el.getAttribute('data-act');
+    if (act === 'f-scope') { state.scope = el.value; rerenderPreservingScroll(); }
+    else if (act === 'f-kind') { state.kind = el.value; rerenderPreservingScroll(); }
+    else if (act === 'f-status') { state.status = el.value; rerenderPreservingScroll(); }
+    else if (act === 'x-status') { state.exStatus = el.value; render(); }
+    else if (act === 'x-doc') { state.exDoc = el.value; render(); }
+    else if (act === 's-density') { state.settings.density = el.value; render(); }
+    else if (el.id === 'import-file' && el.files && el.files[0]) {
+      pendingFile = { name: el.files[0].name, size: el.files[0].size };
+      refreshImport();
+    }
+  });
+
+  /* 抽屉遮罩 */
+  $('#scrim').addEventListener('click', function () { state.drawer = false; render(); });
+  $('#nav-scrim').addEventListener('click', function () { state.navOpen = false; render(); });
+
+  /* 紧凑密度 */
+  var st = document.createElement('style');
+  st.textContent = '.dense{line-height:1.45}.dense .result{padding:10px 16px 11px}.dense .db-row{padding:9px 10px}.dense .read-p{line-height:1.8;margin-bottom:12px}';
+  document.head.appendChild(st);
+
+  render();
+})();
+</script>
+</body>
+</html>
