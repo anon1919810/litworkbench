@@ -32,12 +32,28 @@
 建议 Python 3.12；本项目要求 Python 3.11 及以上。安装 [uv](https://docs.astral.sh/uv/getting-started/installation/) 后，在项目目录运行：
 
 ```powershell
-uv sync --python 3.12 --extra ocr
-uv run --extra ocr lit --help
-uv run --extra ocr lit --workspace ".\我的文献库" init
+uv sync --python 3.12 --extra ocr --extra web --extra xlsx
+uv run --extra ocr --extra web --extra xlsx lit --help
+uv run --extra ocr --extra web lit --workspace ".\我的文献库" init
 ```
 
-也可用 pip：`python -m pip install ".[ocr]"`，安装后命令为 `lit`。只处理文字 PDF / DOCX 可不安装 `ocr` extra。`uv.lock` 固定依赖版本；首次安装需要网络，OCR 模型首次初始化也可能需要下载，准备完成后识别在本地进行。
+- `ocr`：本地 RapidOCR（扫描件必需）
+- `web`：网页版服务（FastAPI + uvicorn）
+- `xlsx`：Excel 导出（openpyxl）；不装时 `export xlsx` 会给出中文提示，其它格式不受影响
+
+**网页版还要一次性构建前端**（`web-client/dist` 不进仓库，缺产物时服务返回 503 并打印查找过的目录）：
+
+```powershell
+cd web-client
+npm install
+npm run build
+cd ..
+.\启动文献工作台.cmd
+```
+
+只要命令行与导出，不需要装 Node，也不需要构建前端。
+
+也可用 pip：`python -m pip install ".[ocr,web,xlsx]"`，安装后命令为 `lit`。只处理文字 PDF / DOCX 可不安装 `ocr` extra。`uv.lock` 固定依赖版本；首次安装需要网络，OCR 模型首次初始化也可能需要下载，准备完成后识别在本地进行。
 
 ## 导入、定位与摘录
 
@@ -103,6 +119,22 @@ Agent 动态调用 search / read / excerpt / finish，长原文可分段读取�
 ```
 
 这是工作流与提示词配置，不训练模型权重。文献库配置还可以设置 `agent.allowed_tools`、`search_limit` 和 `max_steps`。Agent 不能执行 shell、任意读文件或访问任意网址；文献正文作为待分析资料处理。
+
+## 模型自校对与 Excel 导出
+
+```powershell
+# 让配置好的 OpenAI 兼容模型对已识别文字提校订候选（只入库，不改原文）
+.\lit.cmd --workspace ".\我的文献库" proofread --doc <doc_id> --limit 50
+.\lit.cmd --workspace ".\我的文献库" proofread --list --status pending
+.\lit.cmd --workspace ".\我的文献库" proofread --accept <pf_xxx>
+.\lit.cmd --workspace ".\我的文献库" proofread --reject <pf_xxx> --reason "模型判断有误"
+
+# 导出成 xlsx 工作簿（五张表 + 机器可读列契约，供人和 Agent 共用）
+.\lit.cmd --workspace ".\我的文献库" export xlsx --out .\exports\证据表.xlsx
+.\lit.cmd --workspace ".\我的文献库" export xlsx --schemas
+```
+
+候选只在 `--accept` 时才由 `evidence.correct_unit` 写入校订，原始识别结果与校订历史一律保留。
 
 ## 环境检查与验证
 
