@@ -27,6 +27,14 @@
 
 把路径换成真实资料路径。所有命令都将结构化 JSON 写到标准输出，错误和进度写到标准错误；可供其他 Agent 或脚本调用。`--workspace` 放在子命令前。默认扫描件在本地 CPU 上 OCR，无需部署大语言模型或购买显卡。
 
+## 给别人用：把仓库和这份说明一起交给他的 Agent
+
+仓库根目录的 **[AGENTS.md](AGENTS.md)** 是写给**使用者自己的 AI Agent** 的作业说明：怎么部署、CLI 怎么用、文化要素 8 列的契约、引文四取一的规则、以及不许乱来的五条硬规则。
+
+给人时的最短说法：
+
+> 把这个仓库 clone 下来，让你的 Agent 先读仓库根目录的 AGENTS.md，再按里面的流程做。
+
 ## 从 git 本地部署
 
 不提供安装包，直接从仓库部署；需要 Python 3.11+ 与 [uv](https://docs.astral.sh/uv/getting-started/installation/)，网页版另需 Node 22 构建一次前端。
