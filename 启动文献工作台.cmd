@@ -9,7 +9,7 @@ rem  * Chinese startup text is printed by the Python entry point (UTF-8 safe)
 rem ============================================================================
 
 set "LIT_PYTHON=%~dp0.venv\Scripts\python.exe"
-if not exist "%LIT_PYTHON%" set "LIT_PYTHON=%~dp0..\..\work\litworkbench-venv\Scripts\python.exe"
+if not exist "%LIT_PYTHON%" set "LIT_PYTHON=%~dp0..\work\litworkbench-venv\Scripts\python.exe"
 if not exist "%LIT_PYTHON%" (
   echo [ERROR] Python environment not found.
   echo Install it with: uv sync --python 3.12 --extra ocr --extra web
