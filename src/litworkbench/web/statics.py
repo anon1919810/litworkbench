@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from litworkbench.web.errors import error_body
 
 #: 这些前缀不属于前端单页应用，必须由 API 自己回答。
-API_PREFIXES = ("api/", "docs", "redoc", "openapi.json")
+API_PREFIXES = ("api/", "docs", "redoc", "openapi.json", "mcp", "auth/", ".well-known/")
 
 
 def resolve_static_dir() -> tuple[Path | None, list[Path]]:

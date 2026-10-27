@@ -1,0 +1,14 @@
+.git
+.venv
+.superpowers
+**/node_modules
+**/dist
+**/__pycache__
+.pytest_cache
+my-library
+demo-input
+ocr-smoke
+*.env
+deploy/.env
+.last-token
+.last-port

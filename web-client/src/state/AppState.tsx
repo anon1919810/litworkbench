@@ -11,7 +11,7 @@ import { describeError } from '../lib/conflict';
 import type { ErrorInfo } from '../lib/conflict';
 import type { Tone } from '../lib/format';
 
-export type ViewId = 'search' | 'library' | 'jobs' | 'excerpts' | 'projects' | 'settings';
+export type ViewId = 'search' | 'library' | 'jobs' | 'excerpts' | 'projects' | 'settings' | 'notes';
 
 export interface Toast {
   id: number;
@@ -94,6 +94,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => boot(), [boot]);
 
+  useEffect(() => {
+    const sync = (event?: PopStateEvent) => {
+      if (window.location.pathname.startsWith('/pages')) setView('notes');
+      else if (window.location.search) setView('search');
+      else if (event) setView((event.state?.litView as ViewId) || 'search');
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('unit')) setReaderTarget({ unitId: params.get('unit')!, token: Date.now() });
+      if (params.get('doc')) setDocScopeTarget({ unitId: params.get('doc')!, token: Date.now() });
+    };
+    sync(); window.addEventListener('popstate', sync);
+    return () => window.removeEventListener('popstate', sync);
+  }, []);
+
   const refreshCoverage = useCallback(async () => {
     const seq = (coverageSeq.current += 1);
     try {
@@ -120,13 +133,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const navigate = useCallback((next: ViewId) => {
+    if (!window.history.state?.litView) window.history.replaceState({ litView: view }, '', window.location.href);
+    if (next === 'notes' && !window.location.pathname.startsWith('/pages')) window.history.pushState({ litView: next }, '', '/pages');
+    else if (next !== 'notes' && window.location.pathname.startsWith('/pages')) window.history.pushState({ litView: next }, '', '/');
     setView(next);
     try {
       window.sessionStorage.setItem('litworkbench.view.v1', next);
     } catch {
       /* 浏览器禁用存储时不影响使用 */
     }
-  }, []);
+  }, [view]);
 
   const openReader = useCallback((unitId: string) => {
     setReaderTarget({ unitId, token: Date.now() });
@@ -203,9 +219,10 @@ export function useAppState(): AppState {
 }
 
 function readStoredView(): ViewId {
+  if (window.location.pathname.startsWith('/pages')) return 'notes';
   try {
     const stored = window.sessionStorage.getItem('litworkbench.view.v1');
-    if (stored === 'library' || stored === 'jobs' || stored === 'excerpts' || stored === 'projects' || stored === 'settings' || stored === 'search') {
+    if (stored === 'library' || stored === 'jobs' || stored === 'excerpts' || stored === 'projects' || stored === 'settings' || stored === 'search' || stored === 'notes') {
       return stored;
     }
   } catch {

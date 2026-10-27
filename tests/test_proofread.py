@@ -411,7 +411,9 @@ def test_schema_v8_upgrades_to_v9_and_keeps_old_data(tmp_path, monkeypatch):
             "('ev_old', 'u_old', 'doc_old', '白塔', 0, 2, 'original', '{}', :now, :now)",
             {"now": now})
 
-    monkeypatch.setattr(migrations, "MIGRATIONS", full)
+    # 只放行到 v9：更高版本（notes-workspace / cloud-auth）不属于本用例的范围
+    monkeypatch.setattr(migrations, "MIGRATIONS",
+                        tuple(m for m in full if m.version <= 9))
     monkeypatch.setattr(migrations, "SCHEMA_VERSION", 9)
     result = migrations.ensure_schema(workspace)
 

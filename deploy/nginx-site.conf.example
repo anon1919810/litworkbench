@@ -1,0 +1,17 @@
+# Install as a NEW virtual host after DNS and a matching certificate exist.
+server {
+    listen 443 ssl;
+    server_name lit.example.com;
+    ssl_certificate /etc/letsencrypt/live/lit.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/lit.example.com/privkey.pem;
+    client_max_body_size 100m;
+    location / {
+        proxy_pass http://127.0.0.1:18876;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_buffering off;
+        proxy_read_timeout 300s;
+        # Query strings can include OAuth authorization codes. Do not log them.
+        access_log off;
+    }
+}

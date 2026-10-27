@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { AboutDialog } from './components/AboutDialog';
+import { CloudLoginNotice, LoginLink } from './components/CloudLogin';
 import { Sidebar } from './components/Sidebar';
 import { Toasts } from './components/Toasts';
 import { TopBar } from './components/TopBar';
@@ -10,6 +11,8 @@ import { ProjectsPage } from './pages/ProjectsPage';
 import { SearchPage } from './pages/SearchPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AppProvider, useAppState } from './state/AppState';
+
+const NotesPage = lazy(() => import('./notes/NotesPage'));
 
 function Workspace() {
   const { status, view, navigate, bootError, retryBoot } = useAppState();
@@ -58,9 +61,10 @@ function Workspace() {
       <div className="app">
         <div className="col">
           <div className="boot">
-            <h1>无法连接本机文献服务</h1>
+            <h1>{bootError?.code === 'LOGIN_REQUIRED' ? '登录个人图书馆' : '无法连接文献服务'}</h1>
             <p>{bootError?.message ?? '请确认启动器仍在运行，然后重试。'}</p>
             <div className="btn-row" style={{ marginTop: 14 }}>
+              {bootError?.code === 'LOGIN_REQUIRED' ? <LoginLink /> : null}
               <button type="button" className="btn btn-primary" onClick={retryBoot}>
                 重新连接
               </button>
@@ -80,6 +84,7 @@ function Workspace() {
         跳到主内容
       </a>
       <Sidebar onNavigate={navigate} onClose={() => setNavOpen(false)} onAbout={() => setAboutOpen(true)} />
+      <CloudLoginNotice />
       {navOpen ? <div className="nav-scrim" onClick={() => setNavOpen(false)} aria-hidden="true" /> : null}
 
       <div className="col">
@@ -96,6 +101,7 @@ function Workspace() {
           {view === 'excerpts' ? <ExcerptsPage /> : null}
           {view === 'projects' ? <ProjectsPage /> : null}
           {view === 'settings' ? <SettingsPage /> : null}
+          {view === 'notes' ? <Suspense fallback={<p className="help">正在加载笔记工作区…</p>}><NotesPage /></Suspense> : null}
         </main>
       </div>
 

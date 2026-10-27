@@ -13,7 +13,7 @@ from __future__ import annotations
 import subprocess
 import sys
 import time
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, AsyncExitStack
 from pathlib import Path
 from typing import Any
 
@@ -25,11 +25,13 @@ from litworkbench import search_index
 from litworkbench.jobs import JobStore
 from litworkbench.ocr_candidates import CandidateStore
 from litworkbench.store import Workspace
+from litworkbench.runtime import RuntimeSettings
 from litworkbench.web import collections as collections_mod
 from litworkbench.web import documents as documents_mod
 from litworkbench.web import evidence as evidence_mod
 from litworkbench.web import exports as exports_mod
 from litworkbench.web import jobs as jobs_mod
+from litworkbench.web import notes as notes_mod
 from litworkbench.web import ocr_candidates as ocr_candidates_mod
 from litworkbench.web import search as search_mod
 from litworkbench.web.errors import error_response, register_error_handlers
@@ -110,10 +112,14 @@ def coverage_payload(workspace: Workspace) -> dict[str, Any]:
 
 def create_app(workspace_root: Path | str, *, start_worker: bool = True,
                static_dir: Path | str | None = None,
-               server_port: int | None = None) -> FastAPI:
+               server_port: int | None = None,
+               settings: RuntimeSettings | None = None) -> FastAPI:
     """组装本地网页服务。``start_worker=False`` 时不拉起后台识别进程（测试用）。"""
+    settings = settings or RuntimeSettings.from_env()
     root = Path(workspace_root).expanduser()
     workspace = Workspace(root)
+    if settings.mode == 'cloud' and not workspace.exists():
+        raise ValueError('Cloud workspace must be explicitly initialized before starting')
     if not workspace.exists():
         workspace.initialize()
     else:
@@ -122,7 +128,14 @@ def create_app(workspace_root: Path | str, *, start_worker: bool = True,
         migrations.ensure_schema(workspace)
     store = JobStore(workspace)
     sessions = SessionManager()
-    worker = WorkerProcess(workspace.root) if start_worker else None
+    worker = WorkerProcess(workspace.root) if start_worker and (settings.mode == 'local' or settings.worker_enabled) else None
+    mcp = None
+    mcp_app = None
+    if settings.mode == 'cloud':
+        from litworkbench.cloud_auth import CloudAuth
+        from litworkbench.mcp_server import build_mcp
+        cloud_auth = CloudAuth(workspace, settings)
+        mcp, mcp_app = build_mcp(workspace, cloud_auth, settings)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
@@ -134,7 +147,10 @@ def create_app(workspace_root: Path | str, *, start_worker: bool = True,
             except Exception:  # pragma: no cover - 排队失败不应阻断服务
                 pass
         try:
-            yield
+            async with AsyncExitStack() as stack:
+                if mcp is not None:
+                    await stack.enter_async_context(mcp.session_manager.run())
+                yield
         finally:
             if worker is not None:
                 worker.stop()
@@ -153,12 +169,27 @@ def create_app(workspace_root: Path | str, *, start_worker: bool = True,
     app.state.candidates = CandidateStore(workspace)
     app.state.sessions = sessions
     app.state.worker = worker
+    app.state.settings = settings
+    from litworkbench.web import auth as auth_mod
+    if settings.mode == 'cloud':
+        app.state.cloud_auth = cloud_auth
+        app.state.oidc = auth_mod.configure_oidc(settings)
 
     register_error_handlers(app)
 
     @app.middleware("http")
     async def session_guard(request: Request, call_next):
         host = request.headers.get("host", "")
+        if settings.mode == 'cloud':
+            from litworkbench.web.cloud_security import check_cloud_request
+            failure = check_cloud_request(request, app.state.cloud_auth, settings)
+            if failure is not None:
+                return failure
+            response = await call_next(request)
+            response.headers['Cache-Control'] = 'no-store' if request.url.path.startswith(('/api/', '/auth/', '/mcp')) else response.headers.get('Cache-Control', 'no-cache')
+            response.headers['Referrer-Policy'] = 'same-origin'
+            response.headers['X-Content-Type-Options'] = 'nosniff'
+            return response
         if not trusted_local_host(host, server_port):
             return error_response(403, "HOST_REJECTED", "只接受本机地址及当前服务端口。")
         allowed = {f"{request.url.scheme}://{host}"}
@@ -175,7 +206,11 @@ def create_app(workspace_root: Path | str, *, start_worker: bool = True,
     @app.get(f"{API_PREFIX}/workspace")
     def workspace_info(request: Request) -> JSONResponse:
         """建立本地会话并返回工作区概况；csrf_token 只在响应体里给一次。"""
-        session = sessions.get(request.cookies.get(SESSION_COOKIE)) or sessions.issue()
+        if settings.mode == 'cloud':
+            from litworkbench.cloud_auth import SESSION_COOKIE as CLOUD_COOKIE
+            session = app.state.cloud_auth.get_session(request.cookies.get(CLOUD_COOKIE))
+        else:
+            session = sessions.get(request.cookies.get(SESSION_COOKIE)) or sessions.issue()
         payload: dict[str, Any] = {
             "name": workspace.root.name,
             "root": str(workspace.root),
@@ -184,7 +219,13 @@ def create_app(workspace_root: Path | str, *, start_worker: bool = True,
             "coverage": coverage_payload(workspace),
         }
         response = JSONResponse(payload)
-        set_session_cookie(response, session)
+        if settings.mode == 'cloud':
+            payload.pop('root')
+            payload['mode'] = 'cloud'
+            payload['worker_enabled'] = worker is not None
+            response = JSONResponse(payload)
+        else:
+            set_session_cookie(response, session)
         return response
 
     app.include_router(documents_mod.router, prefix=API_PREFIX)
@@ -194,6 +235,11 @@ def create_app(workspace_root: Path | str, *, start_worker: bool = True,
     app.include_router(evidence_mod.router, prefix=API_PREFIX)
     app.include_router(collections_mod.router, prefix=API_PREFIX)
     app.include_router(exports_mod.router, prefix=API_PREFIX)
+    app.include_router(notes_mod.router, prefix=API_PREFIX)
+    app.include_router(auth_mod.router)
+    if mcp_app is not None:
+        from starlette.routing import Route
+        app.router.routes.append(Route('/mcp', endpoint=mcp_app))
     # 静态资源与 SPA 回退必须最后注册：前面的 API 路由优先匹配，
     # 未命中的 /api/... 也会由回退返回 JSON 404 而不是 index.html。
     app.state.static_dir = register_statics(

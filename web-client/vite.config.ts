@@ -6,7 +6,7 @@ import react from '@vitejs/plugin-react';
 // 生产环境由后端同源托管 dist，构建产物使用相对路径 /api/v1。
 export default defineConfig({
   plugins: [react()],
-  base: './',
+  base: '/',
   server: {
     port: 5273,
     strictPort: false,

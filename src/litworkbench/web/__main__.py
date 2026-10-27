@@ -42,6 +42,16 @@ def banner(workspace: Path, host: str, port: int) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    from litworkbench.runtime import RuntimeSettings
+    try:
+        settings = RuntimeSettings.from_env()
+        if settings.mode == 'cloud':
+            from litworkbench.web.cloud import main as cloud_main
+            cloud_main(argv)
+            return 0
+    except ValueError as exc:
+        sys.stderr.write(f'配置错误：{exc}\n')
+        return 2
     args = build_parser().parse_args(argv)
     if args.host not in {"127.0.0.1", "localhost", "::1"}:
         sys.stderr.write("出于本地优先的考虑，服务只监听 127.0.0.1。\n")

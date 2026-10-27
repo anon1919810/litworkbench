@@ -33,7 +33,9 @@ export interface OcrAvailability {
 /** GET /workspace 的返回；同时建立会话 cookie。csrf_token 只在内存中保存。 */
 export interface WorkspaceInfo {
   name: string;
-  root: string;
+  root?: string;
+  mode?: 'local' | 'cloud';
+  worker_enabled?: boolean;
   csrf_token: string;
   ocr: OcrAvailability;
   coverage: Coverage;

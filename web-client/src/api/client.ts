@@ -110,8 +110,12 @@ async function rawRequest<T>(
   const headers = new Headers({ Accept: 'application/json' });
   let body: BodyInit | undefined;
   if (init.body !== undefined) {
-    headers.set('Content-Type', 'application/json');
-    body = JSON.stringify(init.body);
+    if (typeof FormData !== 'undefined' && init.body instanceof FormData) {
+      body = init.body;
+    } else {
+      headers.set('Content-Type', 'application/json');
+      body = JSON.stringify(init.body);
+    }
   }
   if (WRITE_METHODS.has(method)) {
     if (!csrfToken) throw new ApiError(0, 'NO_SESSION', '本地会话尚未建立，请刷新页面重试。');
@@ -142,6 +146,10 @@ async function rawRequest<T>(
 
   if (!response.ok) {
     const error = parseErrorBody(response.status, payload);
+    if (error.code === 'LOGIN_REQUIRED') {
+      window.dispatchEvent(new Event('lit-login-required'));
+      throw error;
+    }
     // 服务重启后内存会话与 csrf 令牌都会丢失：先清掉旧令牌再重新握手，然后重试一次。
     // 并发的 401 共用同一个握手结果，不会互相覆盖。
     if (response.status === 401 && init.retryUnauthorized !== false && path !== '/workspace') {
@@ -209,6 +217,10 @@ export function apiPost<T>(path: string, body?: unknown, signal?: AbortSignal): 
 
 export function apiPatch<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
   return rawRequest<T>('PATCH', path, { body, signal });
+}
+
+export function apiDelete<T>(path: string): Promise<T> {
+  return rawRequest<T>('DELETE', path);
 }
 
 /** 二进制资源 URL（PNG / 原件下载）。直接交给 <img> 或 <a>，不经过 JS。 */

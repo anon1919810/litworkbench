@@ -45,6 +45,19 @@ const workspaceBody = (token: string) => ({
 });
 
 describe('会话与 csrf 令牌', () => {
+  it('云端登录失效时提示登录并原样拒绝写入，不自动重试', async () => {
+    installFetch([
+      { status: 200, body: workspaceBody('old') },
+      { status: 401, body: { error: { code: 'LOGIN_REQUIRED', message: '请登录' } } },
+    ]);
+    const notify = vi.fn(); window.addEventListener('lit-login-required', notify);
+    try {
+      await reauthenticate();
+      await expect(apiPost('/pages', { request_id: 'stable' })).rejects.toMatchObject({ code: 'LOGIN_REQUIRED' });
+      expect(calls).toHaveLength(2);
+      expect(notify).toHaveBeenCalledTimes(1);
+    } finally { window.removeEventListener('lit-login-required', notify); }
+  });
   beforeEach(() => {
     calls.length = 0;
     resetSession();

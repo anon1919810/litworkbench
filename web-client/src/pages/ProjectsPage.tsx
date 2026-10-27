@@ -1,6 +1,5 @@
 import { IconProjects } from '../components/Icons';
 import { PageHeader } from '../components/PageHeader';
-import { Tag } from '../components/Tag';
 import { useAppState } from '../state/AppState';
 
 /**
@@ -15,7 +14,7 @@ export function ProjectsPage() {
       <PageHeader
         icon={<IconProjects size={30} />}
         title="研究项目"
-        description="围绕一个专题组织文献、摘录与报告。当前版本尚未实现，本页只说明范围，不生成任何内容。"
+        description="先在笔记工作区为研究问题建立页面，用子页面、文献和原文摘录组织材料。"
       />
       <div className="page-body">
         <div className="set-block">
@@ -61,7 +60,7 @@ export function ProjectsPage() {
             <button type="button" className="btn btn-sm" onClick={() => navigate('excerpts')}>
               打开摘录集
             </button>
-            <Tag tone="neutral">未实现</Tag>
+            <button type="button" className="btn btn-sm btn-primary" onClick={() => navigate('notes')}>打开笔记工作区</button>
           </div>
         </div>
       </div>

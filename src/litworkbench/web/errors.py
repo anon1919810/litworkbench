@@ -66,6 +66,11 @@ def error_response(status: int, code: str, message: str,
 
 
 def classify(exc: LitError) -> tuple[int, str]:
+    # 领域错误可以带稳定的机器码/状态（例如 REVISION_CONFLICT、FILE_TOO_LARGE）。
+    explicit_code = getattr(exc, "code", None)
+    explicit_status = getattr(exc, "status_code", None)
+    if isinstance(explicit_code, str) and type(explicit_status) is int:
+        return explicit_status, explicit_code
     for error_type, status, code in ERROR_MAP:
         if isinstance(exc, error_type):
             return status, code

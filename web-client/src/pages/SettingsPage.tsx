@@ -4,6 +4,7 @@ import { Tag } from '../components/Tag';
 import { summarizeCoverage } from '../lib/coverage';
 import { num } from '../lib/format';
 import { useAppState } from '../state/AppState';
+import { AgentTokens } from '../components/AgentTokens';
 
 /**
  * 设置页只显示本地服务的真实只读信息，并对尚未实现的能力给出诚实说明。
@@ -21,6 +22,7 @@ export function SettingsPage() {
         description="本页显示本地服务的真实状态。模型与并发设置属于后续版本，当前不会接收任何密钥或改动配置。"
       />
       <div className="page-body">
+        {workspace?.mode === 'cloud' ? <AgentTokens /> : null}
         <div className="set-block">
           <h2 className="set-h">当前工作区</h2>
           <p className="set-sub">这些值直接来自本机服务的会话接口，刷新页面会重新读取。</p>

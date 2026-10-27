@@ -20,6 +20,7 @@ interface NavEntry {
 }
 
 export const NAV_WORKSPACE: NavEntry[] = [
+  { id: 'notes', label: '笔记工作区', icon: IconProjects, description: '页面、研究笔记与关联引用。' },
   { id: 'search', label: '全库检索', icon: IconSearch, description: '跨全部文献检索原文，回到原页核对。' },
   { id: 'library', label: '文献库', icon: IconLibrary, description: '导入原件、查看处理状态与覆盖。' },
   { id: 'jobs', label: '识别任务', icon: IconJobs, description: '逐页文字识别的真实进度与失败页。' },
@@ -107,7 +108,7 @@ export function Sidebar({ onNavigate, onClose, onAbout }: SidebarProps) {
       <div className="sb-foot">
         <p className="sb-row">
           <span className="live-dot" aria-hidden="true" />
-          本地工作区
+          {workspace?.mode === 'cloud' ? '个人云端工作区' : '本地工作区'}
         </p>
         <p className="sb-row" style={{ cursor: 'default' }}>
           <span className="state-tag">开发版</span>

@@ -25,7 +25,7 @@ from litworkbench.errors import WorkspaceError
 from litworkbench.store import Workspace, utcnow
 
 #: 网页里程碑引入的结构版本（1 = 核心 CLI 结构）
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 11
 
 
 @dataclass(frozen=True)
@@ -431,6 +431,121 @@ CREATE TABLE IF NOT EXISTS proofread_candidates (
     )
 
 
+def _create_note_schema(conn: sqlite3.Connection) -> None:
+    """页面与笔记资产（v10）：只新增表与索引，旧文献/摘录/校订完全不动。
+
+    页面快照是正文权威表示；``page_links`` 是从当前正文派生的引用索引，
+    ``page_revisions`` 保存每次成功写入的不可变快照，``mutation_requests``
+    以「操作者 + request_id」为幂等键。这里没有永久删除表或删除接口。
+    """
+    conn.execute("""
+CREATE TABLE IF NOT EXISTS pages (
+    id TEXT PRIMARY KEY,
+    parent_id TEXT REFERENCES pages(id),
+    title TEXT NOT NULL,
+    icon TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'not_started',
+    position INTEGER NOT NULL DEFAULT 0,
+    favorite INTEGER NOT NULL DEFAULT 0,
+    body_json TEXT NOT NULL DEFAULT '{"schema_version":1,"blocks":[]}',
+    schema_version INTEGER NOT NULL DEFAULT 1,
+    revision INTEGER NOT NULL DEFAULT 1,
+    archived INTEGER NOT NULL DEFAULT 0,
+    search_text TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+)""")
+    page_columns = {row["name"] for row in conn.execute("PRAGMA table_info(pages)")}
+    if "search_text" not in page_columns:
+        conn.execute("ALTER TABLE pages ADD COLUMN search_text TEXT NOT NULL DEFAULT ''")
+    conn.execute("""
+CREATE TABLE IF NOT EXISTS page_tags (
+    page_id TEXT NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+    tag TEXT NOT NULL,
+    position INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (page_id, tag)
+)""")
+    conn.execute("""
+CREATE TABLE IF NOT EXISTS page_documents (
+    page_id TEXT NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+    doc_id TEXT NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (page_id, doc_id)
+)""")
+    conn.execute("""
+CREATE TABLE IF NOT EXISTS page_revisions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    page_id TEXT NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+    revision INTEGER NOT NULL,
+    snapshot_json TEXT NOT NULL,
+    origin TEXT NOT NULL,
+    actor TEXT NOT NULL,
+    request_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    UNIQUE (page_id, revision)
+)""")
+    conn.execute("""
+CREATE TABLE IF NOT EXISTS page_links (
+    page_id TEXT NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+    block_id TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    target_id TEXT NOT NULL,
+    snapshot_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (page_id, block_id, kind)
+)""")
+    conn.execute("""
+CREATE TABLE IF NOT EXISTS note_assets (
+    id TEXT PRIMARY KEY,
+    sha256 TEXT NOT NULL UNIQUE,
+    stored_path TEXT NOT NULL,
+    media_type TEXT NOT NULL,
+    byte_size INTEGER NOT NULL,
+    filename TEXT NOT NULL DEFAULT '',
+    workspace_id TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+)""")
+    conn.execute("""
+CREATE TABLE IF NOT EXISTS mutation_requests (
+    owner TEXT NOT NULL,
+    request_id TEXT NOT NULL,
+    operation TEXT NOT NULL,
+    digest TEXT NOT NULL,
+    result_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (owner, request_id)
+)""")
+    conn.execute("""
+CREATE TABLE IF NOT EXISTS page_exports (
+    id TEXT PRIMARY KEY,
+    page_id TEXT NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+    revision INTEGER NOT NULL,
+    format TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    stored_path TEXT NOT NULL,
+    sha256 TEXT NOT NULL DEFAULT '',
+    byte_size INTEGER NOT NULL DEFAULT 0,
+    reference_count INTEGER NOT NULL DEFAULT 0,
+    asset_count INTEGER NOT NULL DEFAULT 0,
+    manifest_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL
+)""")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_pages_parent "
+                 "ON pages(parent_id, position)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_page_links_target "
+                 "ON page_links(kind, target_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_page_revisions_page "
+                 "ON page_revisions(page_id, revision)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_page_exports_page "
+                 "ON page_exports(page_id, revision)")
+
+
+def _create_cloud_auth(conn: sqlite3.Connection) -> None:
+    conn.execute('CREATE TABLE IF NOT EXISTS cloud_sessions (digest TEXT PRIMARY KEY, owner_id TEXT NOT NULL, csrf TEXT NOT NULL, created_at REAL NOT NULL, expires_at REAL NOT NULL)')
+    conn.execute('CREATE TABLE IF NOT EXISTS oauth_flows (digest TEXT PRIMARY KEY, data TEXT NOT NULL, expires_at REAL NOT NULL)')
+    conn.execute('CREATE TABLE IF NOT EXISTS agent_tokens (id TEXT PRIMARY KEY, digest TEXT NOT NULL UNIQUE, owner_id TEXT NOT NULL, name TEXT NOT NULL, scope TEXT NOT NULL, created_at REAL NOT NULL, expires_at REAL NOT NULL, revoked_at REAL, last_used_at REAL)')
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(2, "web-jobs-and-index", lambda conn: (_add_unit_columns(conn),
                                                      _create_web_tables(conn))),
@@ -442,6 +557,8 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(7, "ocr-candidates-and-content-revision", _create_candidate_schema),
     Migration(8, "supervised-ocr-gate", _create_ocr_gate),
     Migration(9, "proofread-candidates", _create_proofread_candidates),
+    Migration(10, "notes-workspace", _create_note_schema),
+    Migration(11, 'cloud-auth', _create_cloud_auth),
 )
 
 

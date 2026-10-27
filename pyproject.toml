@@ -34,6 +34,11 @@ web = [
     "uvicorn>=0.30.0",
     "python-multipart>=0.0.9",
 ]
+cloud = [
+    "authlib>=1.6,<2",
+    "itsdangerous>=2.2,<3",
+    "mcp>=1.25,<2",
+]
 
 [project.scripts]
 lit = "litworkbench.cli:main"
