@@ -132,9 +132,11 @@ def test_worker_subprocess_starts_and_stops_gracefully(web_workspace):
         handle.stop(timeout=20.0)
     assert handle.process is None
     assert not handle.marker.exists(), "退出后要清理停止标记"
-    # 任务被留在队列里，服务重启后可以继续
-    job = JobStore(web_workspace).list()["items"][0]
-    assert job["state"] in {"queued", "running", "preparing"}
+    # 只验证队列里留下了恰好一条记录：真实 worker 可能已经领取（running），
+    # 也可能因为这条伪造的暂存文件而失败（failed）。本用例只负责「进程能起、能干净退出」。
+    items = JobStore(web_workspace).list()["items"]
+    assert len(items) == 1
+    assert items[0]["state"] in {"queued", "running", "preparing", "failed"}
 
 
 def test_worker_process_object_is_reusable(web_workspace):
